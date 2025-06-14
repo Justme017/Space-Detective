@@ -167,7 +167,16 @@ for idx, obj_data in enumerate(visible_objects):
         if display_name_h1 == display_name_h2 and display_name_h1 != "NULL":
             display_name_h2 = ''
 
-        image_lookup_key = display_name_h2 if obj_data['type'] == 'Star' and display_name_h2 else obj_data['name']
+        # Prioritize using the resolved common name for image lookup.
+        # obj_data['name'] should hold the best available name (Wikipedia name > Hipparcos proper name > HIP ID)
+        image_lookup_key = obj_data['name'] 
+        
+        # As a fallback, if the resolved name happens to be a HIP ID and we want to ensure
+        # we are not using it if a more specific display_name_h1 (from description) is available
+        # and different, we could add more logic. But for now, obj_data['name'] is the most refined.
+        # If obj_data['name'] is "Alnilam", use "Alnilam".
+        # If obj_data['name'] is "HIP 26311" (because no common name was found), use "HIP 26311".
+
         image_url = get_object_image_url(image_lookup_key)
 
         # Prepare HTML parts for embedding in the main f-string
