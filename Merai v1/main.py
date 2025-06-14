@@ -3,6 +3,8 @@ st.set_page_config(page_title="Merai - A Space Detective") # Changed page_title
 from datetime import date, datetime
 from skyfield.api import utc
 import pandas as pd
+import folium # Added for interactive map
+from streamlit_folium import st_folium # Added for interactive map
 from astro_utils import get_visible_objects
 from wiki_utils import get_object_image_url, get_object_description, extract_name_from_description
 from location_utils import get_user_location
@@ -40,12 +42,45 @@ st.title("Merai - A Space Detective") # Changed title
 
 # Location
 st.header("Location")
-lat, lon, address = get_user_location()
-if lat is None:
-    st.error("Could not determine location.")
-    st.stop()
-st.success(f"Detected location: {address} ({lat}, {lon})")
-st.map(pd.DataFrame({"lat": [lat], "lon": [lon]}))
+
+# Initialize session state for location if not already present
+if 'latitude' not in st.session_state or 'longitude' not in st.session_state or 'address' not in st.session_state:
+    initial_lat, initial_lon, initial_address = get_user_location()
+    if initial_lat is not None and initial_lon is not None:
+        st.session_state.latitude = initial_lat
+        st.session_state.longitude = initial_lon
+        st.session_state.address = initial_address
+    else:
+        # Fallback if auto-detection fails
+        st.session_state.latitude = 0.0 
+        st.session_state.longitude = 0.0
+        st.session_state.address = "Default Location (Detection Failed)"
+        st.error("Could not automatically determine location. Using default. Please click on the map to set your location.")
+
+# Create a map centered on the current session state coordinates
+m = folium.Map(location=[st.session_state.latitude, st.session_state.longitude], zoom_start=10)
+folium.Marker([st.session_state.latitude, st.session_state.longitude], popup=st.session_state.address).add_to(m)
+
+# Display the map and capture output
+st.info("Click on the map to select a new location.")
+map_data = st_folium(m, width=700, height=500)
+
+# Check if the user clicked on the map
+if map_data and map_data['last_clicked']:
+    clicked_lat = map_data['last_clicked']['lat']
+    clicked_lon = map_data['last_clicked']['lng']
+    if st.session_state.latitude != clicked_lat or st.session_state.longitude != clicked_lon:
+        st.session_state.latitude = clicked_lat
+        st.session_state.longitude = clicked_lon
+        st.session_state.address = f"Manually Selected: ({clicked_lat:.2f}, {clicked_lon:.2f})"
+        # No need to call st.experimental_rerun() explicitly, Streamlit handles reruns on widget interaction.
+
+# Display the current location
+if st.session_state.address != "Default Location (Detection Failed)":
+    st.success(f"Current location: {st.session_state.address} ({st.session_state.latitude:.2f}, {st.session_state.longitude:.2f})")
+else:
+    st.warning(f"Current location: {st.session_state.address}. Please click map to set.")
+
 
 # Date and Time
 st.header("Date and Time")
@@ -67,7 +102,8 @@ dt = datetime.combine(st.session_state.user_selected_date, st.session_state.user
 # Fetch Data
 st.header("Visible Astronomical Objects")
 with st.spinner("Fetching visible astronomical objects and details..."): # Updated spinner message
-    visible_objects = get_visible_objects(lat, lon, dt)
+    # Use latitude and longitude from session state
+    visible_objects = get_visible_objects(st.session_state.latitude, st.session_state.longitude, dt)
     if not visible_objects:
         st.warning("No astronomical objects are currently visible from your location.")
         st.stop()

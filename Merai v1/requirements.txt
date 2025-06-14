@@ -6,3 +6,4 @@ matplotlib
 streamlit
 pandas
 pydeck
+streamlit-folium
