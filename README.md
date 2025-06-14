@@ -11,10 +11,8 @@ Space Detective is an engaging text-based adventure game set in a futuristic spa
 - [Contact](#contact)
 
 ## Features
-- Immersive space-themed storyline with multiple branching paths.
-- Interactive text-based gameplay where player choices matter.
 - Lightweight and easy to run on various platforms.
-- Engaging puzzles and mysteries to solve as a space detective.
+- Stand-alone code.
 
 ## Installation
 To get started with Space Detective, follow these steps:
@@ -58,6 +56,6 @@ Please ensure your code follows the project's coding style and includes relevant
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
 ## Contact
-For questions, suggestions, or bug reports, please open an issue on the [GitHub Issues page](https://github.com/Justme017/Space-Detective/issues) or contact the maintainer at [your-email@example.com].
+For questions, suggestions, or bug reports, please open an issue on the [GitHub Issues page](https://github.com/Justme017/Space-Detective/issues).
 
 Happy investigating in the stars!
