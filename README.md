@@ -1,61 +1,75 @@
 # Space Detective
 
-Space Detective is an engaging text-based adventure game set in a futuristic space environment. Players take on the role of a detective solving mysteries across the cosmos, making choices that influence the storyline and outcomes. Built with [programming language, e.g., Python], this game combines narrative-driven gameplay with interactive decision-making.
+Space Detective is a web app for astronomy fans to explore stars, planets, & cosmic objects from their location. Built with Python & Streamlit, it offers details on celestial bodies & lets users view the past night sky by entering a date & time.
 
 ## Table of Contents
-- [Features](#features)
-- [Installation](#installation)
-- [Usage](#usage)
-- [Contributing](#contributing)
-- [License](#license)
-- [Contact](#contact)
+
+- Features
+- Installation
+- Usage
+- Contributing
+- License
+- Contact
 
 ## Features
-- Lightweight and easy to run on various platforms.
-- Stand-alone code.
+
+- Provides detailed information on stars, planets, and celestial objects visible from a user-specified location.
+- Allows users to view the historical night sky by inputting a specific date and time.
+- User-friendly web interface powered by Streamlit.
+- Accurate astronomical data for an engaging cosmic experience.
 
 ## Installation
-To get started with Space Detective, follow these steps:
+
+To set up Space Detective locally, follow these steps:
 
 1. **Clone the Repository**
+
    ```bash
-   git clone https://github.com/Justme017/Space-Detective.git
+   git clone https://github.com/JUSTME017/Space-Detective.git
    cd Space-Detective
    ```
 
-2. **Install Dependencies**
-   Ensure you have [e.g., Python 3.x] installed. Install any required dependencies by running:
+2. **Install Dependencies**Ensure Python 3.8+ is installed. Install required packages by running:
+
    ```bash
    pip install -r requirements.txt
    ```
-   (If applicable, modify based on the project's actual requirements.)
 
-3. **Verify Setup**
-   Confirm that all files, such as `main.py` (or the primary script), are present in the project directory.
+   (Expected dependencies include `streamlit` and astronomy libraries like `skyfield` or `astropy`.)
+
+3. **Verify Setup**Ensure the main script (e.g., `app.py`) and other necessary files are present in the project directory.
 
 ## Usage
-To play Space Detective, run the main script from the command line:
+
+To launch Space Detective, run the Streamlit application:
+
 ```bash
-python main.py
+streamlit run app.py
 ```
-- Follow the on-screen prompts to navigate the story.
-- Make choices by entering the corresponding options (e.g., numbers or text inputs).
-- Explore different paths to uncover various endings!
+
+- Access the app via the local URL (e.g., `http://localhost:8501`) in your browser.
+- Enter your location (latitude and longitude) to view visible celestial objects.
+- Input a past date and time to explore the historical night sky.
+- Use the interface to access detailed astronomical information.
 
 ## Contributing
-Contributions are welcome! To contribute to Space Detective:
+
+Contributions are welcome! To contribute:
+
 1. Fork the repository.
 2. Create a new branch (`git checkout -b feature/your-feature`).
 3. Commit your changes (`git commit -m "Add your feature"`).
 4. Push to the branch (`git push origin feature/your-feature`).
 5. Open a pull request.
 
-Please ensure your code follows the project's coding style and includes relevant tests.
+Please follow the project's coding style and include relevant tests.
 
 ## License
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+
+This project is licensed under the MIT License. See the LICENSE file for details.
 
 ## Contact
-For questions, suggestions, or bug reports, please open an issue on the [GitHub Issues page](https://github.com/Justme017/Space-Detective/issues).
 
-Happy investigating in the stars!
+For questions, suggestions, or bug reports, open an issue on the GitHub Issues page.
+
+Discover the universe with Space Detective!
