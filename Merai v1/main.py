@@ -1,5 +1,5 @@
 import streamlit as st
-st.set_page_config(page_title="Merai")
+st.set_page_config(page_title="Merai - A Space Detective") # Changed page_title
 from datetime import date, datetime
 from skyfield.api import utc
 import pandas as pd
@@ -36,7 +36,7 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-st.title("Merai") # Changed from STAR DUST
+st.title("Merai - A Space Detective") # Changed title
 
 # Location
 st.header("Location")
@@ -49,9 +49,20 @@ st.map(pd.DataFrame({"lat": [lat], "lon": [lon]}))
 
 # Date and Time
 st.header("Date and Time")
-d = st.date_input("Date", value=date.today())
-t = st.time_input("Time", value=datetime.now().time())
-dt = datetime.combine(d, t).replace(tzinfo=utc)
+
+# Initialize session state for date and time if not already present
+if 'user_selected_date' not in st.session_state:
+    st.session_state.user_selected_date = date.today()
+if 'user_selected_time' not in st.session_state:
+    st.session_state.user_selected_time = datetime.now().time()
+
+# The widgets will read from and write to st.session_state using their keys.
+# The values assigned to d and t will be the current values from session_state.
+d = st.date_input("Date", key="user_selected_date")
+t = st.time_input("Time", key="user_selected_time")
+
+# Construct dt from the session state, which reflects the latest user input
+dt = datetime.combine(st.session_state.user_selected_date, st.session_state.user_selected_time).replace(tzinfo=utc)
 
 # Fetch Data
 st.header("Visible Astronomical Objects")
@@ -87,15 +98,19 @@ with st.spinner("Fetching visible astronomical objects and details..."): # Updat
                 obj['constellation'] = CONSTELLATION_MAP.get(hip_int_for_lookup, "Unknown")
 
 # Create DataFrame for display
-df_columns = ['name', 'hip_id', 'type', 'altitude', 'azimuth', 'constellation']
-# hip_int is useful for debugging but maybe not for final table, user screenshot included it.
-if visible_objects and 'hip_int' in visible_objects[0]: # Check if hip_int exists
-    df_columns.insert(2, 'hip_int') # Insert hip_int after hip_id if present
+df_columns = ['Name', 'HIP ID', 'Type', 'Altitude', 'Azimuth', 'Constellation'] # Ensured all are capitalized
 
 df_display_data = []
 for obj in visible_objects:
-    row = {col: obj.get(col, 'N/A') for col in df_columns}
-    df_display_data.append(row)
+    row_data = {
+        'Name': obj.get('name', 'N/A'), # Changed key to 'Name'
+        'HIP ID': obj.get('hip_id', 'N/A'),
+        'Type': obj.get('type', 'N/A'), # Changed key to 'Type'
+        'Altitude': obj.get('altitude', 'N/A'),
+        'Azimuth': obj.get('azimuth', 'N/A'),
+        'Constellation': obj.get('constellation', 'N/A') # Corrected obj.get key to lowercase 'constellation'
+    }
+    df_display_data.append(row_data)
 
 df = pd.DataFrame(df_display_data)
 st.dataframe(df[df_columns]) # Ensure column order
