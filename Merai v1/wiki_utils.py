@@ -27,15 +27,37 @@ def get_object_description(name):
     return None
 
 def extract_name_from_description(description: str) -> str | None:
-    """Extracts the first capitalized word from a description, likely a name."""
+    """Extracts a potential common name from the beginning of a description,
+    stopping at the first occurrence of ' is ' or ',', with a fallback."""
     if not description:
         return None
+
+    idx_is = description.find(" is ")
+    idx_comma = description.find(",")
+
+    end_idx = -1
+
+    # Determine the earliest valid delimiter position
+    if idx_is != -1 and idx_comma != -1:
+        end_idx = min(idx_is, idx_comma)
+    elif idx_is != -1:
+        end_idx = idx_is
+    elif idx_comma != -1:
+        end_idx = idx_comma
     
-    # Match a capitalized word, possibly with hyphens or numbers
+    # If a delimiter was found, try to extract name using it
+    if end_idx != -1:
+        potential_name_by_delimiter = description[:end_idx].strip()
+        # Validate: not empty, starts with an uppercase letter, and not excessively long
+        if (potential_name_by_delimiter and 
+            potential_name_by_delimiter[0].isupper() and 
+            len(potential_name_by_delimiter) < 70):
+            return potential_name_by_delimiter
+
+    # Fallback to original logic: first capitalized word (min 3 characters)
+    # This is used if delimiters are not found, or if the extraction above was unsuitable.
     match = re.match(r"([A-Z][a-zA-Z0-9\\-]{2,})", description)
     if match:
-        potential_name = match.group(1)
-        # Avoid generic words if possible by checking length or a blacklist if needed
-        if len(potential_name) > 2: # Simple check to avoid very short words
-            return potential_name
+        return match.group(1)
+            
     return None
