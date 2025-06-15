@@ -81,14 +81,3 @@ def load_constellation_data(file_path=CONSTELLATION_FILE_PATH):
         print("Note: 'TAH' is used for Taurus. If 'TAU' is expected from CSV, update CONSTELLATION_NAMES.")
 
     return constellation_map
-
-# Example usage (optional, for testing)
-# if __name__ == "__main__":
-#     const_data = load_constellation_data()
-#     if const_data:
-#         print(f"Loaded {len(const_data)} constellation entries from CSV.")
-#         # Example: Find constellation for Polaris (HIP 11767) or another known star
-#         # print(f"Constellation for HIP 11767 (Polaris): {const_data.get(11767)}")
-#         # print(f"Constellation for HIP 24436 (Aldebaran): {const_data.get(24436)}") # Aldebaran is in Taurus
-#     else:
-#         print("No constellation data loaded.")

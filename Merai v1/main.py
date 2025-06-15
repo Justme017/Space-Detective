@@ -43,44 +43,63 @@ st.title("Merai - A Space Detective") # Changed title
 # Location
 st.header("Location")
 
-# Initialize session state for location if not already present
-if 'latitude' not in st.session_state or 'longitude' not in st.session_state or 'address' not in st.session_state:
-    initial_lat, initial_lon, initial_address = get_user_location()
-    if initial_lat is not None and initial_lon is not None:
-        st.session_state.latitude = initial_lat
-        st.session_state.longitude = initial_lon
-        st.session_state.address = initial_address
-    else:
-        # Fallback if auto-detection fails
-        st.session_state.latitude = 0.0 
-        st.session_state.longitude = 0.0
-        st.session_state.address = "Default Location (Detection Failed)"
-        st.error("Could not automatically determine location. Using default. Please click on the map to set your location.")
+# Initialize session state for location choice and coordinates if not already present
+if 'location_choice' not in st.session_state:
+    st.session_state.location_choice = "Detect my location" # Default choice
+if 'latitude' not in st.session_state: # Ensure these are initialized for map centering
+    st.session_state.latitude = 0.0 # Default latitude
+if 'longitude' not in st.session_state:
+    st.session_state.longitude = 0.0 # Default longitude
+if 'address' not in st.session_state:
+    st.session_state.address = "Not set"
 
-# Create a map centered on the current session state coordinates
-m = folium.Map(location=[st.session_state.latitude, st.session_state.longitude], zoom_start=10)
-folium.Marker([st.session_state.latitude, st.session_state.longitude], popup=st.session_state.address).add_to(m)
+# Let user choose location method
+location_option = st.radio(
+    "Choose location method:",
+    ("Detect my location", "Select location on map"), # Changed options
+    key='location_choice' 
+)
 
-# Display the map and capture output
-st.info("Click on the map to select a new location.")
-map_data = st_folium(m, width=700, height=400) # Changed height to 400
+if st.session_state.location_choice == "Detect my location":
+    if st.button("Detect My Location Now"):
+        detected_lat, detected_lon, detected_address = get_user_location()
+        if detected_lat is not None and detected_lon is not None:
+            st.session_state.latitude = detected_lat
+            st.session_state.longitude = detected_lon
+            st.session_state.address = detected_address
+        else:
+            st.session_state.address = "Automatic Detection Failed"
+            st.error("Could not automatically determine location. Please try selecting on the map.")
+elif st.session_state.location_choice == "Select location on map":
+    st.subheader("Click on the map to set your location")
+    # Use current session state lat/lon for map center, or a default if not set
+    map_center_lat = st.session_state.get('latitude', 0.0)
+    map_center_lon = st.session_state.get('longitude', 0.0)
+    
+    m = folium.Map(location=[map_center_lat, map_center_lon], zoom_start=5) # Adjusted zoom
+    
+    # Add a marker for the current session state location if it's valid
+    if st.session_state.address not in ["Not set", "Automatic Detection Failed", "Default Location (Detection Failed)"] and -90 <= st.session_state.latitude <= 90 and -180 <= st.session_state.longitude <= 180 :
+        folium.Marker([st.session_state.latitude, st.session_state.longitude], popup=st.session_state.address).add_to(m)
 
-# Check if the user clicked on the map
-if map_data and map_data['last_clicked']:
-    clicked_lat = map_data['last_clicked']['lat']
-    clicked_lon = map_data['last_clicked']['lng']
-    if st.session_state.latitude != clicked_lat or st.session_state.longitude != clicked_lon:
-        st.session_state.latitude = clicked_lat
-        st.session_state.longitude = clicked_lon
-        st.session_state.address = f"Manually Selected: ({clicked_lat:.2f}, {clicked_lon:.2f})"
-        # No need to call st.experimental_rerun() explicitly, Streamlit handles reruns on widget interaction.
+    map_data = st_folium(m, height=400, use_container_width=True, key="folium_map_selector")
 
-# Display the current location
-if st.session_state.address != "Default Location (Detection Failed)":
-    st.success(f"Current location: {st.session_state.address} ({st.session_state.latitude:.2f}, {st.session_state.longitude:.2f})")
-else:
-    st.warning(f"Current location: {st.session_state.address}. Please click map to set.")
+    if map_data and map_data["last_clicked"]:
+        clicked_lat = map_data['last_clicked']['lat']
+        clicked_lon = map_data['last_clicked']['lng']
+        # Update session state only if the clicked location is different to avoid unnecessary reruns on map load/pan
+        if st.session_state.latitude != clicked_lat or st.session_state.longitude != clicked_lon:
+            st.session_state.latitude = clicked_lat
+            st.session_state.longitude = clicked_lon
+            st.session_state.address = f"Map Selected: ({clicked_lat:.2f}, {clicked_lon:.2f})"
 
+# Display the current location status
+if st.session_state.address not in ["Not set", "Automatic Detection Failed", "Default Location (Detection Failed)"]:
+    st.success(f"Using location: {st.session_state.address} ({st.session_state.latitude:.2f}, {st.session_state.longitude:.2f})")
+elif st.session_state.address == "Automatic Detection Failed":
+    st.warning("Automatic detection failed. Please select your location on the map or try detecting again.")
+else: # "Not set" or "Default Location (Detection Failed)"
+    st.info("Please detect your location or select it on the map.")
 
 # Date and Time
 st.header("Date and Time")
@@ -156,7 +175,6 @@ st.header("Learn More About Each Object")
 cols = st.columns(3)
 MAX_DESC_LEN = 120  # characters
 TILE_HEIGHT = 550   # px, (already adjusted for constellation line)
-import re
 for idx, obj_data in enumerate(visible_objects): 
     with cols[idx % 3]:
         display_name_h1 = obj_data['name_extracted_from_description_for_tile_h1'] if obj_data['name_extracted_from_description_for_tile_h1'] else "NULL"
