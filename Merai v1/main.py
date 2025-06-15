@@ -63,7 +63,7 @@ folium.Marker([st.session_state.latitude, st.session_state.longitude], popup=st.
 
 # Display the map and capture output
 st.info("Click on the map to select a new location.")
-map_data = st_folium(m, width=700, height=500)
+map_data = st_folium(m, width=700, height=400) # Changed height to 400
 
 # Check if the user clicked on the map
 if map_data and map_data['last_clicked']:
