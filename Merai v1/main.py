@@ -136,16 +136,6 @@ with st.spinner("Fetching visible astronomical objects and details..."): # Updat
         hip_id = obj.get('hip_id')
         description_lookup_key = hip_id if obj['type'] == 'Star' and hip_id else original_astro_name
         description = get_object_description(description_lookup_key)
-        # Clean and process description based on object type
-        if description:
-            # For all objects, clean any HTML/markup properly
-            description = html.unescape(description)
-            description = re.sub(r'<[^<>]*>', '', description)
-            description = re.sub(r'\{\{[^}]*\}\}', '', description)
-            description = re.sub(r'\[\[[^\]]*\]\]', '', description)
-            description = re.sub(r'\s+', ' ', description)
-            description = description.strip()
-            description = re.sub(r'[{}]', '', description)
         
         # Only extract names from Wikipedia for stars, not planets/Sun/Moon
         if obj['type'] == 'Star':

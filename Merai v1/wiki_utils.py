@@ -23,12 +23,15 @@ def get_object_description(name):
             data = resp.json()
             if 'extract' in data:
                 raw_description = html.unescape(data['extract'])
+                print(f"Raw description for {name}: {raw_description}")  # Debugging output
                 # Use BeautifulSoup to clean HTML
                 soup = BeautifulSoup(raw_description, "html.parser")
-                return soup.get_text(strip=True)
-    except Exception:
-        pass
-    return None
+                cleaned_description = soup.get_text(strip=True)
+                print(f"Cleaned description for {name}: {cleaned_description}")  # Debugging output
+                return cleaned_description
+    except Exception as e:
+        print(f"Error fetching description for {name}: {e}")  # Debugging output
+    return "Description not available."
 
 def extract_name_from_description(description: str) -> str | None:
     """Extracts a potential common name from the beginning of a description,
