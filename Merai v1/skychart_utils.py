@@ -1,120 +1,119 @@
-import matplotlib.pyplot as plt
+import plotly.graph_objects as go
 import numpy as np
-import io
 from datetime import datetime
 
-def create_sky_chart(objects, observer_lat, observer_lon, dt_utc):
+def create_sky_chart(objects, observer_lat, observer_lon, dt_utc, zoom=1.0):
     """
-    Generates a sky chart of visible objects.
-
-    Args:
-        objects (list): A list of dictionaries, where each dictionary represents a celestial object
-                        and must contain 'name', 'azimuth' (in degrees), 'altitude' (in degrees),
-                        and 'type' (e.g., 'Star', 'Planet', 'Sun', 'Moon').
-        observer_lat (float): Observer's latitude.
-        observer_lon (float): Observer's longitude.
-        dt_utc (datetime): The datetime object (UTC) for which the chart is generated.
-
-    Returns:
-        io.BytesIO: A BytesIO object containing the PNG image of the sky chart, or None if error.
+    Generates an interactive sky chart of visible objects using Plotly.
+    Returns a Plotly Figure object.
     """
     if not objects:
         return None
 
     try:
-        fig = plt.figure(figsize=(10, 10), facecolor='#0f2027') # Match app background
-        ax = fig.add_subplot(111, projection='polar')
-        ax.set_facecolor('#050A0E') # Darker background for the plot area (deep space)
-
-        # Configure the polar plot
-        ax.set_theta_zero_location("N")  # North at the top
-        ax.set_theta_direction(-1)       # Clockwise (East to the right)
-        ax.set_rlim(0, 90)               # Radius represents 90 - altitude (zenith at center)
-        ax.set_rticks(np.arange(0, 91, 15)) # Ticks from 90 (zenith) to 0 (horizon)
-        ax.set_rlabel_position(0)
-        
-        # Invert r-axis so 90 is at the center (zenith) and 0 is at the edge (horizon)
-        ax.set_ylim(90, 0)
-        
-        alt_labels = [str(90 - int(r)) + '°' for r in ax.get_yticks()]
-        ax.set_yticklabels(alt_labels)
-
-        # More subtle grid lines
-        ax.grid(True, color='#303040', linestyle=':', linewidth=0.4, alpha=0.6) 
-        ax.tick_params(axis='x', colors='lightgrey') # Azimuth ticks
-        ax.tick_params(axis='y', colors='lightgrey') # Altitude ticks (radial)
-        plt.setp(ax.spines.values(), color='lightgrey', alpha=0.7) # Make spines slightly less prominent
-
-        # Define markers and colors
-        markers = {
-            'Star': {'marker': '*', 'color': 'white', 'size': 20, 'alpha': 0.85, 'label': 'Star'},
-            'Planet': {'marker': 'o', 'color': 'gold', 'size': 50, 'label': 'Planet'},
-            'Sun': {'marker': 'o', 'color': 'yellow', 'size': 100, 'label': 'Sun'},
-            'Moon': {'marker': 'o', 'color': 'lightgray', 'size': 80, 'label': 'Moon'},
-            'Deep Sky': {'marker': 's', 'color': 'cyan', 'size': 30, 'label': 'Deep Sky'}
+        fig = go.Figure()
+        # Define styles for different object types
+        styles = {
+            'Star': {'symbol': 'star', 'color': 'white', 'size': 16, 'opacity': 1, 'label': 'Star'},
+            'Planet': {'symbol': 'circle', 'color': 'gold', 'size': 22, 'label': 'Planet'},
+            'Sun': {'symbol': 'circle', 'color': 'yellow', 'size': 32, 'label': 'Sun'},
+            'Moon': {'symbol': 'circle', 'color': 'lightgray', 'size': 28, 'label': 'Moon'},
+            'Deep Sky': {'symbol': 'diamond', 'color': 'cyan', 'size': 18, 'label': 'Deep Sky'},
+            'Other': {'symbol': 'circle-open', 'color': 'grey', 'size': 10, 'label': 'Other'}
         }
-        default_marker = {'marker': '.', 'color': 'grey', 'size': 10, 'alpha': 0.7, 'label': 'Other'}
-
-        plotted_labels = set() 
-
+        objects_by_type = {}
         for obj in objects:
-            name = obj.get('name', 'Unknown')
-            azimuth_deg = obj.get('azimuth')
-            altitude_deg = obj.get('altitude')
             obj_type = obj.get('type', 'Other')
-
-            if azimuth_deg is None or altitude_deg is None or altitude_deg < 0: 
-                continue
-
-            azimuth_rad = np.deg2rad(azimuth_deg)
-            r = 90 - altitude_deg 
-
-            style = markers.get(obj_type, default_marker)
-            
-            current_label = style['label']
-            if current_label not in plotted_labels:
-                ax.scatter(azimuth_rad, r, s=style['size'], color=style['color'], 
-                           marker=style['marker'], alpha=style.get('alpha', 1.0), label=current_label,
-                           edgecolors='black' if obj_type in ['Sun', 'Moon', 'Planet'] else 'none') 
-                plotted_labels.add(current_label)
-            else:
-                 ax.scatter(azimuth_rad, r, s=style['size'], color=style['color'], 
-                           marker=style['marker'], alpha=style.get('alpha', 1.0),
-                           edgecolors='black' if obj_type in ['Sun', 'Moon', 'Planet'] else 'none')
-
-            # Annotate prominent objects
-            if obj_type in ['Sun', 'Moon', 'Planet'] or (obj_type == 'Star' and altitude_deg > 10): 
-                ax.text(azimuth_rad, r + 3, name, color='skyblue', fontsize=7, ha='center', va='bottom', alpha=0.85)
-        
-        # Add cardinal direction labels
-        for angle, label in [(0, 'N'), (np.pi/2, 'E'), (np.pi, 'S'), (3*np.pi/2, 'W')]:
-            ax.text(angle, ax.get_rmax() + 7, label, ha='center', va='center', color='lightgrey', fontsize=12, fontweight='bold')
-
-        # Legend
-        if plotted_labels:
-            legend = ax.legend(loc='lower left', bbox_to_anchor=(1.05, 0), facecolor='#2c5364', edgecolor='gold', labelcolor='white', fontsize=9)
-            for text in legend.get_texts():
-                text.set_color('white')
-
-        # Title
+            if obj_type not in objects_by_type:
+                objects_by_type[obj_type] = []
+            objects_by_type[obj_type].append(obj)
+        for obj_type, type_objects in objects_by_type.items():
+            if not type_objects: continue
+            style = styles.get(obj_type, styles['Other'])
+            azimuths_deg = []
+            altitudes_deg = []
+            object_names = []
+            hover_texts = []
+            for obj in type_objects:
+                az = obj.get('azimuth')
+                alt = obj.get('altitude')
+                if az is None or alt is None or alt < 0:
+                    continue
+                azimuths_deg.append(az)
+                altitudes_deg.append(alt)
+                object_names.append(obj.get('name', 'Unknown'))
+                hover_texts.append(f"{obj.get('name', 'Unknown')}<br>Alt: {alt:.1f}°<br>Az: {az:.1f}°")
+            if not azimuths_deg: continue
+            fig.add_trace(go.Scatterpolar(
+                r=altitudes_deg,
+                theta=azimuths_deg,
+                mode='markers+text',
+                name=style['label'],
+                text=object_names,
+                textfont=dict(size=13, color='skyblue', family="Arial Black"),
+                textposition="bottom center",
+                marker=dict(
+                    symbol=style['symbol'],
+                    color=style['color'],
+                    size=style['size'],
+                    opacity=style.get('opacity', 1.0),
+                    line=dict(width=1.5, color='black') if obj_type in ['Sun', 'Moon', 'Planet'] else None
+                ),
+                hoverinfo='text',
+                hovertext=hover_texts,
+                subplot='polar'
+            ))
         local_time_str = dt_utc.astimezone().strftime("%Y-%m-%d %H:%M:%S %Z")
-        title = f"Sky Chart for Lat: {observer_lat:.2f}, Lon: {observer_lon:.2f}\nAt {local_time_str}"
-        ax.set_title(title, va='bottom', color='gold', fontsize=14, pad=25)
-
-        # Save to BytesIO
-        buf = io.BytesIO()
-        plt.savefig(buf, format='png', bbox_inches='tight', facecolor=fig.get_facecolor(), dpi=150)
-        plt.close(fig) 
-        buf.seek(0)
-        return buf
-
+        title_text = f"Sky Chart for Lat: {observer_lat:.2f}, Lon: {observer_lon:.2f}<br>At {local_time_str}"
+        # Calculate zoomed range
+        min_r, max_r = 0, 90
+        r_center = 45
+        r_span = (max_r - min_r) / zoom
+        r_min = max(r_center - r_span/2, 0)
+        r_max = min(r_center + r_span/2, 90)
+        fig.update_layout(
+            title=dict(text=title_text, font=dict(size=20, color='gold'), y=0.98, x=0.5, xanchor='center', yanchor='top'),
+            showlegend=True,
+            legend=dict(font=dict(color='white', size=16), bgcolor='rgba(44, 83, 100, 0.9)', bordercolor='gold', borderwidth=2, x=1.05, y=0.5),
+            paper_bgcolor='#0f2027',
+            polar=dict(
+                bgcolor='#050A0E',
+                radialaxis=dict(
+                    visible=True,
+                    range=[r_min, r_max],
+                    tickvals=np.arange(0, 91, 15),
+                    ticktext=[str(alt) + '°' for alt in np.arange(0, 91, 15)],
+                    angle=90,
+                    showline=True,
+                    showticklabels=True,
+                    gridcolor='#303040',
+                    linecolor='lightgrey',
+                    tickfont=dict(color='white', size=14)
+                ),
+                angularaxis=dict(
+                    visible=True,
+                    direction="clockwise",
+                    rotation=90,
+                    tickvals=np.arange(0, 360, 45),
+                    ticktext=['N (0°)', 'NE (45°)', 'E (90°)', 'SE (135°)', 'S (180°)', 'SW (225°)', 'W (270°)', 'NW (315°)'],
+                    showline=True,
+                    showticklabels=True,
+                    gridcolor='#303040',
+                    linecolor='lightgrey',
+                    tickfont=dict(color='white', size=14)
+                ),
+                hole=0.0
+            ),
+            margin=dict(l=40, r=40, t=100, b=40)
+        )
+        return fig
     except Exception as e:
-        print(f"Error creating sky chart: {e}") 
+        print(f"Error creating Plotly sky chart: {e}")
         return None
 
 if __name__ == '__main__':
     # Example Usage (for testing skychart_utils.py directly)
-    print("Testing Matplotlib Sky Chart Generation...")
+    print("Testing Plotly Sky Chart Generation...")
     
     # Sample objects (replace with actual data from astro_utils)
     mock_objects = [
@@ -140,14 +139,13 @@ if __name__ == '__main__':
         from datetime import timezone
         mock_dt = datetime.utcnow().replace(tzinfo=timezone.utc) # Fallback if skyfield not in test path
 
-    sky_chart_image = create_sky_chart(mock_objects, mock_lat, mock_lon, mock_dt)
+    sky_chart_fig = create_sky_chart(mock_objects, mock_lat, mock_lon, mock_dt)
 
-    if sky_chart_image:
-        with open("test_matplotlib_skychart.png", "wb") as f:
-            f.write(sky_chart_image.getvalue())
-        print("Test Matplotlib sky chart saved to test_matplotlib_skychart.png")
-        # To display immediately (optional):
-        # from PIL import Image
-        # Image.open(sky_chart_image).show()
+    if sky_chart_fig:
+        # Save as HTML file
+        sky_chart_fig.write_html("test_plotly_skychart.html", include_plotlyjs='cdn')
+        print("Test Plotly sky chart saved to test_plotly_skychart.html")
+        # To display immediately (optional, requires internet for Plotly JS):
+        # sky_chart_fig.show()
     else:
-        print("Failed to generate test Matplotlib sky chart.")
+        print("Failed to generate test Plotly sky chart.")

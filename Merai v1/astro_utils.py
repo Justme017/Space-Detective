@@ -17,47 +17,70 @@ def get_visible_objects(lat, lon, user_dt=None):
     observer = earth + Topos(latitude_degrees=lat, longitude_degrees=lon)
     visible = []
 
+    # Mapping of integer keys to planet names and types
+    PLANET_KEY_MAP = {
+        199: ('Mercury', 'Planet'),
+        299: ('Venus', 'Planet'),
+        399: ('Earth', None),  # skip Earth
+        301: ('Moon', 'Moon'),
+        499: ('Mars', 'Planet'),
+        599: ('Jupiter', 'Planet'),
+        699: ('Saturn', 'Planet'),
+        799: ('Uranus', 'Planet'),
+        899: ('Neptune', 'Planet'),
+        999: ('Pluto', 'Planet'),
+        10: ('Sun', 'Sun'),
+    }
+
     # Diagnostic print: Show all names from the ephemeris
     print("Bodies loaded from ephemeris:", planets.names())
 
     for name in planets.names():
-        if name == 'earth': # Skip Earth itself
+        # Handle integer keys for planets
+        if isinstance(name, int) and name in PLANET_KEY_MAP:
+            pretty_name, obj_type = PLANET_KEY_MAP[name]
+            if obj_type is None:
+                continue  # skip Earth
+            try:
+                body = planets[name]
+                alt, az, _ = observer.at(t).observe(body).apparent().altaz()
+                if alt.degrees > 0:
+                    visible.append({
+                        'name': pretty_name,
+                        'type': obj_type,
+                        'altitude': round(alt.degrees, 2),
+                        'azimuth': round(az.degrees, 2)
+                    })
+            except Exception as e:
+                print(f"Could not process {name}: {e}")
+            continue
+
+        # Handle string names (legacy)
+        if name == 'earth':
             continue
         try:
-            body = planets[name] # Renamed for clarity, includes Sun, Moon, planets
+            body = planets[name]
             alt, az, _ = observer.at(t).observe(body).apparent().altaz()
-
-            if alt.degrees > 0: # If above the horizon
-                pretty_name = name.replace(' barycenter', '').capitalize()
-                
-                # Determine object type
-                if name.lower() == 'sun':
+            if alt.degrees > 0:
+                pretty_name = str(name).replace(' barycenter', '').capitalize()
+                name_str = str(name).lower()
+                if name_str == 'sun':
                     obj_type = 'Sun'
-                elif name.lower() == 'moon':
+                elif name_str == 'moon':
                     obj_type = 'Moon'
-                # Check for planets (ensure 'Earth' is not miscategorized if it were processed)
-                elif pretty_name in ['Mercury', 'Venus', 'Mars', 'Jupiter', 'Saturn', 'Uranus', 'Neptune', 'Pluto']: # Pluto is still in DE421
+                elif pretty_name in ['Mercury', 'Venus', 'Mars', 'Jupiter', 'Saturn', 'Uranus', 'Neptune', 'Pluto']:
                     obj_type = 'Planet'
                 else:
-                    # For other bodies in DE421 that are not Sun, Moon, or the main planets (e.g., asteroid barycenters if any)
-                    # We might want to filter these out or categorize them differently if they appear.
-                    # For now, let's assign a generic type or skip.
-                    # To be safe, let's only include known types for now or assign a generic 'Celestial Body'.
-                    # For this iteration, we'll focus on Sun, Moon, and Planets.
-                    # If pretty_name is not one of the above, it might be something like 'Earthmoon' (Moon's barycenter)
-                    # or other specific points in the ephemeris. We'll skip these for now to keep the list clean.
                     if pretty_name not in ['Sun', 'Moon', 'Mercury', 'Venus', 'Mars', 'Jupiter', 'Saturn', 'Uranus', 'Neptune', 'Pluto']:
-                        continue # Skip other less common barycenters or points for now
-
+                        continue
                 visible.append({
                     'name': pretty_name,
                     'type': obj_type,
                     'altitude': round(alt.degrees, 2),
                     'azimuth': round(az.degrees, 2)
-                    # HIP ID and constellation are not applicable to Sun, Moon, Planets
                 })
         except Exception as e:
-            # print(f"Could not process {name}: {e}") # Optional: for debugging
+            print(f"Could not process {name}: {e}")
             continue
     
     with open(HIPP_PATH, 'rb') as f:

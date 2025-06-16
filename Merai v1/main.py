@@ -173,16 +173,31 @@ st.dataframe(df[df_columns]) # Ensure column order
 
 # Add Sky Chart Section
 st.header("Sky Chart")
+
+# Add zoom controls for the sky chart
+zoom_levels = [0.7, 1.0, 1.3, 1.6, 2.0]
+if 'sky_zoom' not in st.session_state:
+    st.session_state.sky_zoom = 1.0
+
+col1, col2, col3 = st.columns([1,2,1])
+with col1:
+    if st.button("- Zoom Out"):
+        idx = zoom_levels.index(st.session_state.sky_zoom) if st.session_state.sky_zoom in zoom_levels else 1
+        if idx > 0:
+            st.session_state.sky_zoom = zoom_levels[idx-1]
+with col3:
+    if st.button("+ Zoom In"):
+        idx = zoom_levels.index(st.session_state.sky_zoom) if st.session_state.sky_zoom in zoom_levels else 1
+        if idx < len(zoom_levels)-1:
+            st.session_state.sky_zoom = zoom_levels[idx+1]
+
 if visible_objects: # Ensure there are objects to plot
-    # Use latitude, longitude, and dt from session state or current values
     chart_lat = st.session_state.get('latitude', 0.0)
     chart_lon = st.session_state.get('longitude', 0.0)
-    # dt is already defined and in UTC
-
     with st.spinner("Generating Sky Chart..."):
-        sky_chart_image = create_sky_chart(visible_objects, chart_lat, chart_lon, dt)
-        if sky_chart_image:
-            st.image(sky_chart_image, caption=f"Sky chart for {st.session_state.address} at {dt.strftime('%Y-%m-%d %H:%M:%S UTC')}", use_container_width=True)
+        sky_chart_figure = create_sky_chart(visible_objects, chart_lat, chart_lon, dt, zoom=st.session_state.sky_zoom)
+        if sky_chart_figure:
+            st.plotly_chart(sky_chart_figure, use_container_width=True)
         else:
             st.warning("Could not generate the sky chart at this time.")
 else:
@@ -195,14 +210,19 @@ cols = st.columns(3)
 MAX_DESC_LEN = 120  # characters
 TILE_HEIGHT = 550   # px, (already adjusted for constellation line)
 for idx, obj_data in enumerate(visible_objects): 
-    with cols[idx % 3]:
-        display_name_h1 = obj_data['name_extracted_from_description_for_tile_h1'] if obj_data['name_extracted_from_description_for_tile_h1'] else "NULL"
-        display_name_h2 = obj_data.get('hip_id', '') 
+    with cols[idx % 3]:        # Use proper name logic: For planets/Sun/Moon use original name, for stars prefer Wikipedia name
+        if obj_data['type'] in ['Sun', 'Moon', 'Planet']:
+            display_name_h1 = obj_data['name']  # Use the clean name from astro_utils
+            display_name_h2 = ''  # No HIP ID for planets
+        else:
+            # For stars, prefer Wikipedia name, fallback to original name
+            display_name_h1 = obj_data['name_extracted_from_description_for_tile_h1'] if obj_data['name_extracted_from_description_for_tile_h1'] else obj_data['name']
+            display_name_h2 = obj_data.get('hip_id', '')
+            if display_name_h1 == display_name_h2 and display_name_h1 != "NULL":
+                display_name_h2 = ''
+        
         description_for_tile = obj_data['fetched_description']
         constellation_name_for_tile = obj_data.get('constellation', "N/A")
-
-        if display_name_h1 == display_name_h2 and display_name_h1 != "NULL":
-            display_name_h2 = ''
 
         # Prioritize using the resolved common name for image lookup.
         # obj_data['name'] should hold the best available name (Wikipedia name > Hipparcos proper name > HIP ID)
@@ -246,3 +266,8 @@ for idx, obj_data in enumerate(visible_objects):
         if description_for_tile and len(description_for_tile) > MAX_DESC_LEN:
             with st.expander("Know more"):
                 st.markdown(f"<h4 style='color:#bbb;font-size:1em;margin:0;'>{description_for_tile}</h4>", unsafe_allow_html=True)
+
+    # Diagnostic: Show raw visible_objects for debugging
+    st.subheader("[Debug] Raw Visible Objects")
+    # Debug output (commented out to reduce clutter)
+# st.json(visible_objects)
