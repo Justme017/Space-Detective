@@ -180,9 +180,9 @@ if visible_objects: # Ensure there are objects to plot
     # dt is already defined and in UTC
 
     with st.spinner("Generating Sky Chart..."):
-        sky_chart_figure = create_sky_chart(visible_objects, chart_lat, chart_lon, dt)
-        if sky_chart_figure:
-            st.plotly_chart(sky_chart_figure, use_container_width=True) # Use st.plotly_chart
+        sky_chart_image = create_sky_chart(visible_objects, chart_lat, chart_lon, dt)
+        if sky_chart_image:
+            st.image(sky_chart_image, caption=f"Sky chart for {st.session_state.address} at {dt.strftime('%Y-%m-%d %H:%M:%S UTC')}", use_container_width=True)
         else:
             st.warning("Could not generate the sky chart at this time.")
 else:
