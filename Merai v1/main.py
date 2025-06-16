@@ -9,6 +9,7 @@ from astro_utils import get_visible_objects
 from wiki_utils import get_object_image_url, get_object_description, extract_name_from_description
 from location_utils import get_user_location
 from constellation_utils import load_constellation_data # Import new utility
+from skychart_utils import create_sky_chart # Import the new sky chart utility
 
 # Load constellation data once at the start
 CONSTELLATION_MAP = load_constellation_data()
@@ -169,6 +170,24 @@ for obj in visible_objects:
 
 df = pd.DataFrame(df_display_data)
 st.dataframe(df[df_columns]) # Ensure column order
+
+# Add Sky Chart Section
+st.header("Sky Chart")
+if visible_objects: # Ensure there are objects to plot
+    # Use latitude, longitude, and dt from session state or current values
+    chart_lat = st.session_state.get('latitude', 0.0)
+    chart_lon = st.session_state.get('longitude', 0.0)
+    # dt is already defined and in UTC
+
+    with st.spinner("Generating Sky Chart..."):
+        sky_chart_figure = create_sky_chart(visible_objects, chart_lat, chart_lon, dt)
+        if sky_chart_figure:
+            st.plotly_chart(sky_chart_figure, use_container_width=True) # Use st.plotly_chart
+        else:
+            st.warning("Could not generate the sky chart at this time.")
+else:
+    st.info("No objects visible to display on sky chart.")
+
 
 # Details as uniform dark-mode friendly tiles with fixed height and content truncation
 st.header("Learn More About Each Object")

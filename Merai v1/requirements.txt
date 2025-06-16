@@ -7,3 +7,4 @@ streamlit
 pandas
 pydeck
 streamlit-folium
+plotly
