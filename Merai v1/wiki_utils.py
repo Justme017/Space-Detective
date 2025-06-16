@@ -1,6 +1,7 @@
 import requests
 import html
 import re
+from bs4 import BeautifulSoup
 
 def get_object_image_url(name):
     url = f"https://en.wikipedia.org/api/rest_v1/page/summary/{name}"
@@ -21,7 +22,10 @@ def get_object_description(name):
         if resp.status_code == 200:
             data = resp.json()
             if 'extract' in data:
-                return html.unescape(data['extract'])
+                raw_description = html.unescape(data['extract'])
+                # Use BeautifulSoup to clean HTML
+                soup = BeautifulSoup(raw_description, "html.parser")
+                return soup.get_text(strip=True)
     except Exception:
         pass
     return None

@@ -243,12 +243,6 @@ for idx, obj_data in enumerate(visible_objects):
         # obj_data['name'] should hold the best available name (Wikipedia name > Hipparcos proper name > HIP ID)
         image_lookup_key = obj_data['name'] 
         
-        # As a fallback, if the resolved name happens to be a HIP ID and we want to ensure
-        # we are not using it if a more specific display_name_h1 (from description) is available
-        # and different, we could add more logic. But for now, obj_data['name'] is the most refined.
-        # If obj_data['name'] is "Alnilam", use "Alnilam".
-        # If obj_data['name'] is "HIP 26311" (because no common name was found), use "HIP 26311".
-
         image_url = get_object_image_url(image_lookup_key)
 
         # Prepare HTML parts for embedding in the main f-string
@@ -281,8 +275,3 @@ for idx, obj_data in enumerate(visible_objects):
         if description_for_tile and len(description_for_tile) > MAX_DESC_LEN:
             with st.expander("Know more"):
                 st.markdown(f"<h4 style='color:#bbb;font-size:1em;margin:0;'>{description_for_tile}</h4>", unsafe_allow_html=True)
-
-    # Diagnostic: Show raw visible_objects for debugging
-    st.subheader("[Debug] Raw Visible Objects")
-    # Debug output (commented out to reduce clutter)
-# st.json(visible_objects)
