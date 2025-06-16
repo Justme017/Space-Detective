@@ -3,6 +3,8 @@ st.set_page_config(page_title="Merai - A Space Detective") # Changed page_title
 from datetime import date, datetime
 from skyfield.api import utc
 import pandas as pd
+import re
+import html
 import folium # Added for interactive map
 from streamlit_folium import st_folium # Added for interactive map
 from astro_utils import get_visible_objects
@@ -127,20 +129,33 @@ with st.spinner("Fetching visible astronomical objects and details..."): # Updat
     if not visible_objects:
         st.warning("No astronomical objects are currently visible from your location.")
         st.stop()
-
+    
     # Enhance objects with descriptions and refined names for DataFrame and Tiles
     for obj in visible_objects:
         original_astro_name = obj['name'] # Name from astro_utils (proper name or HIP ID)
         hip_id = obj.get('hip_id')
-
         description_lookup_key = hip_id if obj['type'] == 'Star' and hip_id else original_astro_name
         description = get_object_description(description_lookup_key)
-        name_from_desc = extract_name_from_description(description) if description else None
-
-        # Update obj['name'] for DataFrame display: Wikipedia name > Hipparcos proper name > HIP ID
-        if name_from_desc:
-            obj['name'] = name_from_desc
-        # else obj['name'] remains what astro_utils set it to (proper_name or HIP ID)
+        # Clean and process description based on object type
+        if description:
+            # For all objects, clean any HTML/markup properly
+            description = html.unescape(description)
+            description = re.sub(r'<[^<>]*>', '', description)
+            description = re.sub(r'\{\{[^}]*\}\}', '', description)
+            description = re.sub(r'\[\[[^\]]*\]\]', '', description)
+            description = re.sub(r'\s+', ' ', description)
+            description = description.strip()
+            description = re.sub(r'[{}]', '', description)
+        
+        # Only extract names from Wikipedia for stars, not planets/Sun/Moon
+        if obj['type'] == 'Star':
+            name_from_desc = extract_name_from_description(description) if description else None
+            # Update obj['name'] for DataFrame display: Wikipedia name > Hipparcos proper name > HIP ID
+            if name_from_desc:
+                obj['name'] = name_from_desc
+        else:
+            # For planets/Sun/Moon, keep the clean name from astro_utils
+            name_from_desc = None
         
         # Store details for tile generation to avoid re-fetching
         obj['fetched_description'] = description
