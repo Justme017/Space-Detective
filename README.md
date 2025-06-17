@@ -51,7 +51,18 @@ streamlit run app.py
 - Enter your location (latitude and longitude) to view visible celestial objects.
 - Input a past date and time to explore the historical night sky.
 - Use the interface to access detailed astronomical information.
+## Flask Mode
 
+export FLASK_APP=app.py
+export FLASK_ENV=development
+Windows (CMD):
+    set FLASK_APP=app.py
+    set FLASK_ENV=development
+Run the Flask server:
+flask run
+Or simply:
+python app.py
+Browse to http://127.0.0.1:5000/ to access the Flask UI
 ## Contributing
 
 Contributions are welcome! To contribute:
