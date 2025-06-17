@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>User Location Demo</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #f9f9f9;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+        }
+
+        #location {
+            font-size: 1.1rem;
+            padding: 12px 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #fff;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            text-align: center;
+            max-width: 300px;
+        }
+
+        button {
+            margin-top: 20px;
+            padding: 10px 16px;
+            font-size: 1rem;
+            border: none;
+            border-radius: 6px;
+            background-color: #0077cc;
+            color: white;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #005fa3;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Find My Location</h1>
+    <div id="location">Click the button below to share your location.</div>
+    <button onclick="getLocation()">Get Location</button>
+
+    <script>
+        function getLocation() {
+            const output = document.getElementById("location");
+
+            if (!navigator.geolocation) {
+                output.innerText = "Geolocation is not supported by your browser.";
+                return;
+            }
+
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const { latitude, longitude } = position.coords;
+                    output.innerHTML = `Your Location:<br>Latitude: ${latitude.toFixed(5)}<br>Longitude: ${longitude.toFixed(5)}`;
+                },
+                (error) => {
+                    output.innerText = "Unable to retrieve your location.";
+                }
+            );
+        }
+    </script>
+
+</body>
+</html>

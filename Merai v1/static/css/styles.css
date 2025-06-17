@@ -1,0 +1,268 @@
+body {
+  background: radial-gradient(ellipse at 60% 40%, #232b33 60%, #2c5364 100%);
+  color: #f1f1f1;
+  min-height: 100vh;
+  margin: 0;
+}
+
+.container {
+  background: #181c22;
+  max-width: 700px;
+  margin: 2.5rem auto 0 auto;
+  border-radius: 18px;
+  box-shadow: 0 8px 48px #000a;
+  padding: 2.5rem 2.5rem 2rem 2.5rem;
+  padding-top: 64px;
+}
+
+h1,
+h2 {
+  color: #ffd700;
+  font-weight: bold;
+  margin-bottom: 1.2rem;
+}
+
+h1 {
+  font-size: 2.5rem;
+  text-align: left;
+  margin-top: 0.5rem;
+}
+
+h2 {
+  font-size: 2rem;
+  margin-top: 2.5rem;
+}
+
+label,
+.location-method label {
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 400;
+}
+
+.location-method {
+  margin-bottom: 0.7rem;
+}
+
+.location-method input[type='radio'] {
+  accent-color: #ff4444;
+  margin-right: 0.3rem;
+}
+
+.geo-ui {
+  margin-bottom: 0.7rem;
+}
+
+.geo-ui button,
+.geo-ui input {
+  font-size: 1rem;
+  border-radius: 6px;
+  border: none;
+  margin-right: 0.5rem;
+  padding: 0.5rem 1.2rem;
+}
+
+.geo-ui button {
+  background: none;
+  color: #fff;
+  border: 1px solid #fff;
+  transition: background 0.2s, color 0.2s;
+}
+
+.geo-ui button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.geo-ui button:hover:not(:disabled) {
+  background: #ffd700;
+  color: #232526;
+  border: 1px solid #ffd700;
+}
+
+.geo-ui input {
+  background: #232526;
+  color: #fff;
+  border: 1px solid #444;
+  width: 140px;
+  padding: 0.5rem 0.7rem;
+}
+
+#map-container {
+  max-width: 100%;
+  margin: 1rem 0;
+}
+
+#map {
+  min-height: 250px;
+  max-height: 350px;
+  overflow: hidden;
+  border-radius: 12px;
+  border: 2px solid #ffd700;
+}
+
+input[type='date'],
+input[type='time'],
+select {
+  width: 100%;
+  background: #232526;
+  color: #fff;
+  border: 1px solid #444;
+  border-radius: 6px;
+  padding: 0.6rem 0.8rem;
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+}
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  grid-gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.tile {
+  background: linear-gradient(135deg, #232526 0%, #414345 100%);
+  border: 2px solid #ffd700;
+  border-radius: 18px;
+  padding: 0.5rem 0.5rem 1.2rem 0.5rem;
+  box-shadow: 0 4px 24px #000a;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.tile img {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  border-radius: 12px 12px 0 0;
+}
+
+.tile h3,
+.tile h4 {
+  color: #ffd700;
+  margin: 0.7rem 0 0.2rem 0;
+  text-align: center;
+}
+
+.tile p {
+  color: #fff;
+  font-size: 1rem;
+  margin: 0.2rem 0;
+  text-align: center;
+}
+
+.tile details {
+  margin-top: 0.5rem;
+  width: 100%;
+}
+
+.tile details[open] {
+  display: block;
+}
+
+.tile details[open] ~ h3,
+.tile details[open] ~ h4,
+.tile details[open] ~ p,
+.tile details[open] ~ .tile-img {
+  display: none;
+}
+
+.tile details[open] {
+  background: #232526;
+  border-radius: 12px;
+  border: 2px solid #ffd700;
+  color: #ffd700;
+  padding: 0.5rem;
+  font-size: 1.1rem;
+  box-shadow: 0 4px 24px #000a;
+}
+
+.tile details[open] p,
+.tile details[open] img,
+.tile details[open] h3,
+.tile details[open] h4 {
+  color: #ffd700 !important;
+  margin-bottom: 0.5rem;
+}
+
+.tile details[open] img {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  border-radius: 12px 12px 0 0;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.tile details[open] summary {
+  color: #fff;
+  font-weight: bold;
+  font-size: 1rem;
+  background: none;
+  border: none;
+  outline: none;
+}
+
+.tile details[open]::-webkit-details-marker {
+  display: none;
+}
+
+.topbar-actions {
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: 0;
+  width: 100vw;
+  background: #181c22;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 1.2rem;
+  z-index: 100;
+  font-size: 1.1rem;
+  height: 56px;
+  box-shadow: 0 2px 16px #000a;
+  padding-right: 2.5rem;
+}
+
+.status-icon svg {
+  width: 20px;
+  height: 20px;
+  margin-right: 0.2rem;
+  opacity: 0.7;
+}
+
+.status-text {
+  color: #6cf;
+  font-weight: 500;
+  margin-right: 0.8rem;
+  letter-spacing: 1px;
+}
+
+.topbar-btn {
+  background: none;
+  border: 1px solid #fff;
+  color: #fff;
+  font-weight: 500;
+  font-size: 1.05rem;
+  cursor: pointer;
+  margin: 0 0.2rem;
+  padding: 0.2rem 1.2rem;
+  border-radius: 6px;
+  transition: background 0.2s, color 0.2s, border 0.2s;
+}
+
+.topbar-btn:hover {
+  background: #ffd700;
+  color: #232526;
+  border: 1px solid #ffd700;
+}
+
+.topbar-menu {
+  font-size: 1.5rem;
+  color: #fff;
+  cursor: pointer;
+  margin-left: 0.2rem;
+}

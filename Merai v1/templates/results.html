@@ -1,0 +1,190 @@
+{% extends 'base.html' %}
+{% block content %}
+  <h1>Merai – A Space Detective</h1>
+
+  <form method="POST">
+    <!-- Preserve current zoom level and action -->
+    <input type="hidden" name="zoom" id="zoom" value="{{ zoom }}">
+    <input type="hidden" name="action" value="view">
+
+    <section>
+      <h2>Location</h2>
+      <div class="location-method">
+        <label>Choose location method:</label><br>
+        <label><input type="radio" name="location_method" value="detect" id="loc-detect"> Detect my location</label><br>
+        <label><input type="radio" name="location_method" value="map" id="loc-map" checked> Select location on map</label>
+      </div>
+      <div class="geo-ui">
+        <button type="button" id="detect-btn" onclick="detectLocation()">Detect My Location</button>
+        <input
+          id="lat"
+          name="latitude"
+          placeholder="Latitude"
+          required
+          value="{{ latitude|default('') }}"
+        >
+        <input
+          id="lon"
+          name="longitude"
+          placeholder="Longitude"
+          required
+          value="{{ longitude|default('') }}"
+        >
+      </div>
+      <div id="map-container" style="display: block;">
+        <div id="map">
+          {{ map_html|safe }}
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Date &amp; Time</h2>
+      <input type="date" name="date" value="{{ date|default('') }}">
+      <input type="time" name="time" value="{{ time|default('') }}">
+    </section>
+
+    <button type="submit">Show Sky</button>
+  </form>
+
+  {% if objects %}
+    <section>
+      <h2>Visible Astronomical Objects</h2>
+      <div class="tiles">
+        {% for obj in objects %}
+          <div class="tile">
+            <div class="tile-img">
+              {% if obj.image_url %}
+                <img src="{{ obj.image_url }}" alt="{{ obj.name }}">
+              {% else %}
+                <img src="{{ url_for('static', filename='img/star_placeholder.png') }}" alt="No image available">
+              {% endif %}
+            </div>
+            <h3>
+              {{ obj.name_extracted_from_description_for_tile_h1 or obj.name }}
+            </h3>
+            {% if obj.type == 'Star' and obj.hip_id %}
+              <h4>{{ obj.hip_id }}</h4>
+            {% endif %}
+            <p>
+              <strong>Type:</strong> {{ obj.type }}<br>
+              <strong>Alt:</strong> {{ obj.altitude }}°&nbsp;
+              <strong>Az:</strong> {{ obj.azimuth }}°<br>
+              <strong>Const:</strong> {{ obj.constellation }}
+            </p>
+            <p>
+              {{ obj.fetched_description[:120] }}
+              {% if obj.fetched_description|length > 120 %}…{% endif %}
+            </p>
+            {% if obj.fetched_description|length > 120 %}
+              <details>
+                <summary>Know more</summary>
+                <p>{{ obj.fetched_description }}</p>
+              </details>
+            {% endif %}
+          </div>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section>
+      <h2>Sky Chart</h2>
+      <div class="zoom-controls">
+        <form method="POST" style="display:inline;">
+          <input type="hidden" name="latitude" value="{{ latitude|default('') }}">
+          <input type="hidden" name="longitude" value="{{ longitude|default('') }}">
+          <input type="hidden" name="date" value="{{ date|default('') }}">
+          <input type="hidden" name="time" value="{{ time|default('') }}">
+          <input type="hidden" name="zoom" value="{{ zoom|default('') }}">
+          <input type="hidden" name="action" value="zoom_out">
+          <button>-</button>
+        </form>
+        <span>Zoom: {{ zoom }}</span>
+        <form method="POST" style="display:inline;">
+          <input type="hidden" name="latitude" value="{{ latitude|default('') }}">
+          <input type="hidden" name="longitude" value="{{ longitude|default('') }}">
+          <input type="hidden" name="date" value="{{ date|default('') }}">
+          <input type="hidden" name="time" value="{{ time|default('') }}">
+          <input type="hidden" name="zoom" value="{{ zoom|default('') }}">
+          <input type="hidden" name="action" value="zoom_in">
+          <button>+</button>
+        </form>
+      </div>
+      <div class="chart-title">
+        Sky Chart for Lat: {{ latitude|default('') }}, Lon: {{ longitude|default('') }}<br>
+        At {{ date|default('') }} {{ time|default('') }}
+      </div>
+      <div class="chart">
+        {{ chart_html|safe }}
+      </div>
+    </section>
+
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        var map = window["{{ map_name|default('map') }}"];
+        var form = document.querySelector('form');
+        var detectBtn = document.getElementById('detect-btn');
+        var locDetect = document.getElementById('loc-detect');
+        var locMap = document.getElementById('loc-map');
+        var mapContainer = document.getElementById('map-container');
+
+        function setMapInteraction(enabled) {
+          if (map) {
+            if (enabled) {
+              map.dragging.enable();
+              map.doubleClickZoom.enable();
+              map.on('click', map._clickHandler);
+              map.on('dblclick', map._dblClickHandler);
+            } else {
+              map.dragging.disable();
+              map.doubleClickZoom.disable();
+              map.off('click');
+              map.off('dblclick');
+            }
+          }
+        }
+
+        // Save handlers for toggling
+        if (map) {
+          map._clickHandler = function(e) {
+            document.getElementById('lat').value = e.latlng.lat.toFixed(6);
+            document.getElementById('lon').value = e.latlng.lng.toFixed(6);
+          };
+          map._dblClickHandler = function(e) {
+            document.getElementById('lat').value = e.latlng.lat.toFixed(6);
+            document.getElementById('lon').value = e.latlng.lng.toFixed(6);
+            if (form) form.submit();
+          };
+          map.on('click', map._clickHandler);
+          map.on('dblclick', map._dblClickHandler);
+        }
+
+        // Default: map selection enabled
+        if (detectBtn) detectBtn.disabled = true;
+        setMapInteraction(true);
+        if (mapContainer) mapContainer.style.display = 'block';
+
+        if (locDetect && locMap) {
+          locDetect.addEventListener('change', function() {
+            if (this.checked) {
+              if (detectBtn) detectBtn.disabled = false;
+              setMapInteraction(false);
+              if (mapContainer) mapContainer.style.display = 'none';
+            }
+          });
+          locMap.addEventListener('change', function() {
+            if (this.checked) {
+              if (detectBtn) detectBtn.disabled = true;
+              setMapInteraction(true);
+              if (mapContainer) mapContainer.style.display = 'block';
+            }
+          });
+        }
+      });
+    </script>
+  {% endif %}
+{% endblock %}
+{% block scripts %}
+  <script src="{{ url_for('static', filename='js/geolocate.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/sky_chart.js') }}"></script>
+{% endblock %}
