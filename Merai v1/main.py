@@ -5,7 +5,7 @@ A Streamlit web application for exploring visible astronomical objects from any 
 and time. This app provides detailed information about planets, stars, and other 
 celestial objects, along with an interactive sky chart.
 
-Author: Merai Development Team
+Author: Merai Development Team 
 License: MIT
 """
 
@@ -231,9 +231,9 @@ class MeraiApp:
         
         return enhanced_objects
     
-    def create_object_tile_simple(self, name_h1, name_h2, obj_data, constellation, description, image_url):
+    def create_object_tile_html(self, name_h1, name_h2, obj_data, constellation, description, image_url):
         """
-        Create object tile using simple approach to avoid HTML rendering issues.
+        Create object tile using minimal HTML to avoid rendering issues.
         
         Args:
             name_h1 (str): Primary name for display
@@ -243,57 +243,31 @@ class MeraiApp:
             description (str): Object description
             image_url (str): URL of object image
         """
-        # Get appropriate emoji for object type
-        type_emoji = {"Star": "⭐", "Planet": "🪐", "Sun": "☀️", "Moon": "🌙"}.get(obj_data['type'], "🌌")
+        # Get object emoji
+        type_emoji = self._get_object_emoji(obj_data['type'])
         
-        # Create container with border
-        container = st.container()
-        
-        with container:
-            # Add custom CSS for better styling
+        # Create a simple container
+        with st.container():
+            # Add basic styling
             st.markdown("""
-            <style>
-            .custom-tile {
-                border: 2px solid #ffd700;
-                border-radius: 15px;
-                padding: 20px;
-                margin: 10px 0;
-                background: linear-gradient(135deg, #232526 0%, #414345 100%);
-                box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-                text-align: center;
-            }
-            .tile-details {
-                text-align: left;
-                padding: 10px 0;
-            }
-            </style>
+            <div style="border: 2px solid #ffd700; border-radius: 15px; padding: 15px; margin: 10px 0; background: linear-gradient(135deg, #232526 0%, #414345 100%); box-shadow: 0 4px 15px rgba(0,0,0,0.5);">
             """, unsafe_allow_html=True)
             
-            # Use markdown for the container
-            st.markdown('<div class="custom-tile">', unsafe_allow_html=True)
-            
-            # Image section using Streamlit's native image component - centered
+            # Image section
             if image_url and image_url.startswith(('http://', 'https://')):
                 try:
-                    # Center the image using columns
-                    col1, col2, col3 = st.columns([1, 2, 1])
-                    with col2:
-                        st.image(image_url, width=200, caption="")
+                    st.image(image_url, width=200)
                 except:
-                    st.markdown(f"<div style='text-align: center;'><h3>{type_emoji} {name_h1}</h3></div>", unsafe_allow_html=True)
+                    st.markdown(f"## {type_emoji} {name_h1}")
             else:
-                st.markdown(f"<div style='text-align: center;'><h3>{type_emoji} {name_h1}</h3></div>", unsafe_allow_html=True)
+                st.markdown(f"## {type_emoji} {name_h1}")
             
-            # Title - centered
-            st.markdown(f"<h2 style='text-align: center; color: #ffd700;'>🌟 {name_h1}</h2>", unsafe_allow_html=True)
-            
-            # Subtitle for stars - centered
+            # Title and subtitle
+            st.markdown(f"### 🌟 {name_h1}")
             if name_h2:
-                st.markdown(f"<p style='text-align: center; font-weight: bold;'>{name_h2}</p>", unsafe_allow_html=True)
+                st.markdown(f"**{name_h2}**")
             
-            # Object details using columns for better layout
-            st.markdown('<div class="tile-details">', unsafe_allow_html=True)
-            
+            # Object details
             col1, col2 = st.columns(2)
             with col1:
                 st.write(f"**{type_emoji} Type:** {obj_data['type']}")
@@ -302,21 +276,23 @@ class MeraiApp:
                 st.write(f"**🧭 Azimuth:** {obj_data['azimuth']}°")
                 st.write(f"**✨ Constellation:** {constellation}")
             
-            # Description - centered
+            # Description
             if description and description != "Description not available.":
                 desc_content = (description[:MAX_DESC_LEN] + "..." 
                                if len(description) > MAX_DESC_LEN 
                                else description)
-                st.markdown(f"<div style='text-align: center; padding-top: 10px;'><strong>📖 Description:</strong> {desc_content}</div>", unsafe_allow_html=True)
+                st.write(f"**📖 Description:** {desc_content}")
             
-            st.markdown('</div>', unsafe_allow_html=True)
-            
-            st.markdown('</div>', unsafe_allow_html=True)
+            st.markdown("</div>", unsafe_allow_html=True)
             
             # Expandable full description
             if description and description != "Description not available." and len(description) > MAX_DESC_LEN:
                 with st.expander("📖 Read full description"):
                     st.write(description)
+    
+    def _get_object_emoji(self, obj_type):
+        """Get appropriate emoji for object type."""
+        return {"Star": "⭐", "Planet": "🪐", "Sun": "☀️", "Moon": "🌙"}.get(obj_type, "🌌")
     
     def create_object_tiles(self, objects):
         """
@@ -351,8 +327,8 @@ class MeraiApp:
                 # Get image
                 image_url = get_object_image_url(obj_data['name'])
                 
-                # Create tile using simple approach
-                self.create_object_tile_simple(
+                # Create tile HTML
+                self.create_object_tile_html(
                     display_name_h1, display_name_h2, obj_data, 
                     constellation, description, image_url
                 )
@@ -395,7 +371,7 @@ class MeraiApp:
             with st.spinner("🌌 Generating sky chart..."):
                 try:
                     sky_chart_figure = create_sky_chart(
-                        visible_objects, chart_lat, chart_lon, dt, 
+                        visible_objects, dt, chart_lat, chart_lon, 
                         zoom=st.session_state.sky_zoom
                     )
                     
@@ -438,6 +414,8 @@ class MeraiApp:
         # Fetch and display astronomical objects
         st.header("🌌 Visible Astronomical Objects")
         
+        visible_objects = []  # Initialize as empty list
+        
         with st.spinner("🔍 Scanning the cosmos for visible objects..."):
             try:
                 visible_objects = get_visible_objects(
@@ -449,20 +427,19 @@ class MeraiApp:
                 if not visible_objects:
                     st.warning("🌑 No astronomical objects are currently visible from your location.")
                     st.info("💡 Try adjusting the time or location to see different objects.")
-                    st.stop()
-                
-                # Enhance objects with additional information
-                enhanced_objects = self.enhance_visible_objects(visible_objects)
-                
-                # Display object tiles
-                self.create_object_tiles(enhanced_objects)
+                else:
+                    # Enhance objects with additional information
+                    enhanced_objects = self.enhance_visible_objects(visible_objects)
+                    
+                    # Display object tiles
+                    self.create_object_tiles(enhanced_objects)
                 
             except Exception as e:
                 st.error(f"❌ Error fetching astronomical data: {str(e)}")
                 st.info("Please check your internet connection and try again.")
-                st.stop()
+                visible_objects = []  # Set to empty list on error
         
-        # Render sky chart
+        # Render sky chart (always render, even if no objects)
         self.render_sky_chart_section(visible_objects, dt)
         
         # Footer

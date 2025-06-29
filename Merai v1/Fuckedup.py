@@ -200,86 +200,64 @@ def create_object_tiles(objects):
             description = obj_data['fetched_description']
             constellation = obj_data.get('constellation', "N/A")
 
-            # Get image
+            # Get image and create tile using Streamlit components for better reliability
             image_url = get_object_image_url(obj_data['name'])
-            
-            # Create tile HTML
-            create_object_tile_html(
+            create_streamlit_object_tile(
                 display_name_h1, display_name_h2, obj_data, 
                 constellation, description, image_url
             )
 
-def create_object_tile_html(name_h1, name_h2, obj_data, constellation, description, image_url):
-    """Create HTML for individual object tile."""
-    # Image section
-    if image_url:
-        image_html = f"""
-        <img src='{image_url}' 
-             style='width:100%;height:180px;object-fit:cover;
-                   border-top-left-radius:16px;border-top-right-radius:16px;margin-bottom:0;' 
-             alt='{name_h1}' />
-        """
-    else:
-        image_html = """
-        <div style='width:100%;height:180px;display:flex;align-items:center;justify-content:center;
-                   background:#333;border-top-left-radius:16px;border-top-right-radius:16px;
-                   color:#ff6666;font-size:18px;'>
-            🌌 No image found
-        </div>
-        """
-    
-    # Text content
-    h1_html = f"<h1 style='color:#ffd700;margin:10px 0 0 0;font-size:1.5em;text-align:center;'>{name_h1}</h1>"
-    h2_html = f"<h2 style='color:#fff;margin:0 0 8px 0;font-size:1.1em;text-align:center;letter-spacing:1px;'>{name_h2}</h2>" if name_h2 else ""
-    
-    details_html = f"""
-    <div style='text-align:center;color:#eee;font-size:0.95em;'>
-        <b>Type:</b> {obj_data['type']}<br>
-        <b>Altitude:</b> {obj_data['altitude']}°<br>
-        <b>Azimuth:</b> {obj_data['azimuth']}°<br>
-        <b>Constellation:</b> {constellation}
-    </div>
-    """
-    
-    # Description (truncated)
-    description_html = ""
-    if description:
-        desc_content = (description[:MAX_DESC_LEN] + "..." 
-                       if len(description) > MAX_DESC_LEN 
-                       else description)
-        description_html = f"""
-        <h3 style='color:#bbb;font-size:0.9em;margin:8px 0 0 0;text-align:left;
-                  overflow-y:auto;max-height:60px;padding:0 5px;'>
-            {desc_content}
-        </h3>
-        """
-    
-    # Complete tile
-    tile_html = f"""
-    <div style='height:{TILE_HEIGHT}px; display:flex; flex-direction:column; 
-               justify-content:space-between; border:2px solid #ffd700; 
-               border-radius:18px; padding:0; margin-bottom:18px; 
-               background:linear-gradient(135deg,#232526 0%,#414345 100%); 
-               box-shadow:0 4px 24px rgba(0,0,0,0.6);'>
-        <div>
-            {image_html}
-            <div style='padding: 0 10px;'>
-                {h1_html}
-                {h2_html}
-                {details_html}
-                {description_html}
-            </div>
-        </div>
-        <div style="flex-grow: 1;"></div>
-    </div>
-    """
-    
-    st.markdown(tile_html, unsafe_allow_html=True)
-    
-    # Expandable full description
-    if description and len(description) > MAX_DESC_LEN:
-        with st.expander("📖 Read more"):
-            st.markdown(f"<p style='color:#bbb;'>{description}</p>", unsafe_allow_html=True)
+def create_streamlit_object_tile(name_h1, name_h2, obj_data, constellation, description, image_url):
+    """Create object tile using Streamlit components for better image handling."""
+    # Create container with custom styling
+    with st.container():
+        # Add styling
+        st.markdown(f"""
+        <div style="border: 2px solid #ffd700; border-radius: 15px; padding: 15px; margin: 10px 0; 
+                    background: linear-gradient(135deg, #232526 0%, #414345 100%); 
+                    box-shadow: 0 4px 15px rgba(0,0,0,0.5); min-height: {TILE_HEIGHT}px;">
+        """, unsafe_allow_html=True)
+        
+        # Image section using Streamlit's image component (more reliable)
+        if image_url and image_url.startswith(('http://', 'https://')):
+            try:
+                st.image(image_url, width=250, caption=f"📸 {name_h1}")
+            except Exception as e:
+                st.markdown("🌌 **Image not available**")
+                st.write(f"Debug: {str(e)[:50]}...")  # Debug info
+        else:
+            st.markdown("🌌 **No image found**")
+        
+        # Object type emoji
+        type_emoji = {"Star": "⭐", "Planet": "🪐", "Sun": "☀️", "Moon": "🌙"}.get(obj_data['type'], "🌌")
+        
+        # Title and subtitle
+        st.markdown(f"### {type_emoji} {name_h1}")
+        if name_h2:
+            st.markdown(f"**{name_h2}**")
+        
+        # Object details in columns
+        col1, col2 = st.columns(2)
+        with col1:
+            st.write(f"**Type:** {obj_data['type']}")
+            st.write(f"**Altitude:** {obj_data['altitude']}°")
+        with col2:
+            st.write(f"**Azimuth:** {obj_data['azimuth']}°")
+            st.write(f"**Constellation:** {constellation}")
+        
+        # Description
+        if description and description != "Description not available.":
+            desc_content = (description[:MAX_DESC_LEN] + "..." 
+                           if len(description) > MAX_DESC_LEN 
+                           else description)
+            st.write(f"**Description:** {desc_content}")
+            
+            # Expandable full description
+            if len(description) > MAX_DESC_LEN:
+                with st.expander("📖 Read full description"):
+                    st.write(description)
+        
+        st.markdown("</div>", unsafe_allow_html=True)
 
 def render_sky_chart_section(visible_objects, dt):
     """Render the interactive sky chart section."""
@@ -310,7 +288,7 @@ def render_sky_chart_section(visible_objects, dt):
         
         with st.spinner("🌌 Generating Sky Chart..."):
             sky_chart_figure = create_sky_chart(
-                visible_objects, chart_lat, chart_lon, dt, 
+                visible_objects, dt, chart_lat, chart_lon, 
                 zoom=st.session_state.sky_zoom
             )
             

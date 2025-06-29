@@ -105,7 +105,9 @@ def get_visible_objects(lat, lon, user_dt=None):
                         'hip_int': hip_id_int,    # Add integer HIP ID for constellation lookup
                         'type': 'Star',
                         'altitude': round(alt.degrees, 2),
-                        'azimuth': round(az.degrees, 2)
+                        'azimuth': round(az.degrees, 2),
+                        'ra_hours': star_row['ra_hours'],
+                        'dec_degrees': star_row['dec_degrees']
                     })
             except Exception:
                 # Skip stars that can't be processed
