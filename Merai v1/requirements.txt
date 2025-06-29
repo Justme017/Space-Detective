@@ -14,9 +14,5 @@ streamlit-folium
 
 # Visualization
 plotly
-
-# HTML parsing
 beautifulsoup4
-
-# Image processing (for potential future enhancements)
-Pillow
+flask
