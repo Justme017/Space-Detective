@@ -8,3 +8,5 @@ pandas
 pydeck
 streamlit-folium
 plotly
+beautifulsoup4
+flask
