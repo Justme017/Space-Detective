@@ -1,12 +1,22 @@
+# Core astronomical computation
 skyfield
-geocoder
+
+# Web API and HTTP requests
 requests
-Pillow
-matplotlib
-streamlit
+geocoder
+
+# Data processing
 pandas
-pydeck
+
+# UI Framework
+streamlit
 streamlit-folium
+
+# Visualization
 plotly
+
+# HTML parsing
 beautifulsoup4
-flask
+
+# Image processing (for potential future enhancements)
+Pillow

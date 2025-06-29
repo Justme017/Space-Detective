@@ -1,4 +1,11 @@
 # constellation_utils.py
+"""
+Constellation utility functions for the Merai Space Detective application.
+
+This module provides functions to load constellation data and map HIP catalog IDs
+to constellation names for stellar objects.
+"""
+
 import csv
 import os
 
@@ -29,9 +36,16 @@ CONSTELLATION_NAMES = {
 }
 
 def load_constellation_data(file_path=CONSTELLATION_FILE_PATH):
-    """Loads constellation data from the hygdata_v41.csv file.
+    """
+    Load constellation data from the hygdata_v41.csv file.
+    
     Assumes CSV format with a header. Looks for 'hip' and 'con' columns.
-    Returns a dictionary mapping HIP ID (int) to full constellation name (str).
+    
+    Args:
+        file_path (str): Path to the CSV file containing constellation data
+        
+    Returns:
+        dict: Dictionary mapping HIP ID (int) to full constellation name (str)
     """
     constellation_map = {}
     hip_col_index = -1
@@ -40,16 +54,15 @@ def load_constellation_data(file_path=CONSTELLATION_FILE_PATH):
     try:
         with open(file_path, 'r', newline='', encoding='utf-8') as f:
             reader = csv.reader(f)
-            header = next(reader) # Read the header row
+            header = next(reader)  # Read the header row
             
             # Find column indices for 'hip' and 'con'
             try:
                 hip_col_index = header.index('hip')
                 con_col_index = header.index('con')
             except ValueError:
-                print("Error: 'hip' or 'con' column not found in CSV header.")
-                print(f"Header found: {header}")
-                return constellation_map # Return empty map if columns are not found
+                # Return empty map if columns are not found
+                return constellation_map
 
             for row in reader:
                 try:
@@ -58,28 +71,18 @@ def load_constellation_data(file_path=CONSTELLATION_FILE_PATH):
                         hip_str = row[hip_col_index]
                         const_abbr = row[con_col_index].upper()
 
-                        if hip_str and const_abbr: # Ensure values are not empty
-                            hip_id = int(float(hip_str)) # HIP ID might be float in some CSVs, convert to int
+                        if hip_str and const_abbr:  # Ensure values are not empty
+                            hip_id = int(float(hip_str))  # HIP ID might be float in CSV
                             constellation_map[hip_id] = CONSTELLATION_NAMES.get(const_abbr, const_abbr)
-                    else:
-                        # Log or handle rows that are too short, if necessary
-                        # print(f"Skipping short row: {row}")
-                        continue
-                except ValueError:
-                    # Skip lines that don't conform to expected HIP ID (numeric) or other parsing errors
-                    # print(f"Skipping row due to ValueError: {row}")
+                except (ValueError, IndexError):
+                    # Skip lines that don't conform to expected format
                     continue
-                except IndexError:
-                    # Should be caught by len(row) check, but as a safeguard
-                    # print(f"Skipping row due to IndexError: {row}")
-                    continue
+                    
     except FileNotFoundError:
-        print(f"Error: Constellation file not found at {file_path}")
-    except Exception as e:
-        print(f"An unexpected error occurred while reading {file_path}: {e}")
-        
-    # A quick check for Taurus abbreviation, as 'TAH' was noted and 'TAU' is common
-    if "TAH" in CONSTELLATION_NAMES and "TAU" not in CONSTELLATION_NAMES:
-        print("Note: 'TAH' is used for Taurus. If 'TAU' is expected from CSV, update CONSTELLATION_NAMES.")
+        # Return empty map if file not found
+        pass
+    except Exception:
+        # Handle any other unexpected errors gracefully
+        pass
 
     return constellation_map

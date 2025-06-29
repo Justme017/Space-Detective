@@ -1,9 +1,25 @@
+"""
+Wikipedia utility functions for the Merai Space Detective application.
+
+This module provides functions to fetch object descriptions and images from Wikipedia
+to enhance the display of astronomical objects with additional information.
+"""
+
 import requests
 import html
 import re
 from bs4 import BeautifulSoup
 
 def get_object_image_url(name):
+    """
+    Fetch object image URL from Wikipedia API.
+    
+    Args:
+        name (str): Name of the astronomical object
+        
+    Returns:
+        str or None: Image URL if available, None otherwise
+    """
     url = f"https://en.wikipedia.org/api/rest_v1/page/summary/{name}"
     try:
         resp = requests.get(url, timeout=5)
@@ -16,6 +32,15 @@ def get_object_image_url(name):
     return None
 
 def get_object_description(name):
+    """
+    Fetch object description from Wikipedia API.
+    
+    Args:
+        name (str): Name of the astronomical object
+        
+    Returns:
+        str: Cleaned description text or default message if not available
+    """
     url = f"https://en.wikipedia.org/api/rest_v1/page/summary/{name}"
     try:
         resp = requests.get(url, timeout=5)
@@ -23,19 +48,27 @@ def get_object_description(name):
             data = resp.json()
             if 'extract' in data:
                 raw_description = html.unescape(data['extract'])
-                print(f"Raw description for {name}: {raw_description}")  # Debugging output
                 # Use BeautifulSoup to clean HTML
                 soup = BeautifulSoup(raw_description, "html.parser")
                 cleaned_description = soup.get_text(strip=True)
-                print(f"Cleaned description for {name}: {cleaned_description}")  # Debugging output
                 return cleaned_description
-    except Exception as e:
-        print(f"Error fetching description for {name}: {e}")  # Debugging output
+    except Exception:
+        pass
     return "Description not available."
 
 def extract_name_from_description(description: str) -> str | None:
-    """Extracts a potential common name from the beginning of a description,
-    stopping at the first occurrence of ' is ' or ',', with a fallback."""
+    """
+    Extract a potential common name from the beginning of a description.
+    
+    Stops at the first occurrence of ' is ' or ',', with a fallback to
+    the first capitalized word if delimiters are not found.
+    
+    Args:
+        description (str): Description text to extract name from
+        
+    Returns:
+        str or None: Extracted name if found, None otherwise
+    """
     if not description:
         return None
 
