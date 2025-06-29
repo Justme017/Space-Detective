@@ -1,8 +1,10 @@
 # constellation_utils.py
 import csv
+import os
 
-# Updated file path to the new CSV data source
-CONSTELLATION_FILE_PATH = r"D:\\NITM ED\\Coding - Python\\GITHUB\\Space-Detective\\Merai v1\\hygdata_v41.csv"
+# Get the directory where constellation_utils.py is located and build the correct path
+_CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+CONSTELLATION_FILE_PATH = os.path.join(_CURRENT_DIR, "hygdata_v41.csv")
 
 # Full constellation names from abbreviations (remains the same)
 CONSTELLATION_NAMES = {

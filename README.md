@@ -29,7 +29,9 @@ To set up Space Detective locally, follow these steps:
    cd Space-Detective
    ```
 
-2. **Install Dependencies**Ensure Python 3.8+ is installed. Install required packages by running:
+2. **Install Dependencies**
+   
+   Ensure Python 3.8+ is installed. Install required packages by running:
 
    ```bash
    pip install -r requirements.txt
@@ -37,14 +39,17 @@ To set up Space Detective locally, follow these steps:
 
    (Expected dependencies include `streamlit` and astronomy libraries like `skyfield` or `astropy`.)
 
-3. **Verify Setup**Ensure the main script (e.g., `app.py`) and other necessary files are present in the project directory.
+3. **Verify Setup**
+   
+   Ensure the main script (e.g., `main.py`) and other necessary files are present in the project directory.
 
 ## Usage
 
 To launch Space Detective, run the Streamlit application:
 
 ```bash
-streamlit run app.py
+cd "Merai v1"
+streamlit run main.py
 ```
 
 - Access the app via the local URL (e.g., `http://localhost:8501`) in your browser.
