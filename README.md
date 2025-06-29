@@ -23,7 +23,7 @@ A beautiful and interactive Streamlit web application for exploring visible astr
 
 1. Clone the repository:
 ```bash
-git clone <repository-url>
+git clone https://github.com/Justme017/Space-Detective
 cd "Space-Detective-1/Merai v1"
 ```
 

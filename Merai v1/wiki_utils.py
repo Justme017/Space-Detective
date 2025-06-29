@@ -12,7 +12,7 @@ from bs4 import BeautifulSoup
 
 def get_object_image_url(name):
     """
-    Fetch object image URL from Wikipedia API.
+    Fetch object image URL from Wikipedia API with improved handling.
     
     Args:
         name (str): Name of the astronomical object
@@ -20,15 +20,51 @@ def get_object_image_url(name):
     Returns:
         str or None: Image URL if available, None otherwise
     """
+    # Define fallback image URLs for common astronomical objects
+    fallback_images = {
+        'Moon': 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e1/FullMoon2010.jpg/256px-FullMoon2010.jpg',
+        'Sun': 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b4/The_Sun_by_the_Atmospheric_Imaging_Assembly_of_NASA%27s_Solar_Dynamics_Observatory_-_20100819.jpg/256px-The_Sun_by_the_Atmospheric_Imaging_Assembly_of_NASA%27s_Solar_Dynamics_Observatory_-_20100819.jpg',
+        'Mercury': 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4a/Mercury_in_true_color.jpg/256px-Mercury_in_true_color.jpg',
+        'Venus': 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/08/Venus_from_Mariner_10.jpg/256px-Venus_from_Mariner_10.jpg',
+        'Mars': 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/02/OSIRIS_Mars_true_color.jpg/256px-OSIRIS_Mars_true_color.jpg',
+        'Jupiter': 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2b/Jupiter_and_its_shrunken_Great_Red_Spot.jpg/256px-Jupiter_and_its_shrunken_Great_Red_Spot.jpg',
+        'Saturn': 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Saturn_from_Cassini_Orbiter_%282004-10-06%29.jpg/256px-Saturn_from_Cassini_Orbiter_%282004-10-06%29.jpg',
+        'Uranus': 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/48/Uranus_as_seen_by_NASA%27s_Voyager_2_%28remastered%29.png/256px-Uranus_as_seen_by_NASA%27s_Voyager_2_%28remastered%29.png',
+        'Neptune': 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/63/Neptune_-_Voyager_2_%2829347980845%29_flatten_crop.jpg/256px-Neptune_-_Voyager_2_%2829347980845%29_flatten_crop.jpg',
+        'Pluto': 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ef/Pluto_in_True_Color_-_High-Res.jpg/256px-Pluto_in_True_Color_-_High-Res.jpg'
+    }
+    
+    # First, try to get image from Wikipedia API
     url = f"https://en.wikipedia.org/api/rest_v1/page/summary/{name}"
     try:
         resp = requests.get(url, timeout=5)
         if resp.status_code == 200:
             data = resp.json()
             if 'thumbnail' in data and 'source' in data['thumbnail']:
+                # Get higher resolution image if available
+                img_url = data['thumbnail']['source']
+                # Try to get a larger version by modifying the URL
+                if '/thumb/' in img_url and img_url.endswith('px-'):
+                    # Replace with higher resolution
+                    img_url = img_url.replace('/thumb/', '/').split('/')
+                    if len(img_url) > 1:
+                        # Remove the size specification to get original size
+                        original_filename = img_url[-1].split('-')[-1]
+                        img_url[-2] = original_filename
+                        img_url = '/'.join(img_url[:-1])
+                        return img_url
                 return data['thumbnail']['source']
     except Exception:
         pass
+    
+    # If Wikipedia API fails, try fallback images
+    if name in fallback_images:
+        return fallback_images[name]
+    
+    # For stars, try to get a generic star image
+    if name.startswith('HIP ') or 'star' in name.lower():
+        return 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c4/Sirius_A_and_B_Hubble_photo.jpg/256px-Sirius_A_and_B_Hubble_photo.jpg'
+    
     return None
 
 def get_object_description(name):

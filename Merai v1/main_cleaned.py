@@ -233,7 +233,7 @@ class MeraiApp:
     
     def create_object_tile_html(self, name_h1, name_h2, obj_data, constellation, description, image_url):
         """
-        Create HTML for individual object tile.
+        Create object tile using minimal HTML to avoid rendering issues.
         
         Args:
             name_h1 (str): Primary name for display
@@ -243,80 +243,56 @@ class MeraiApp:
             description (str): Object description
             image_url (str): URL of object image
         """
-        # Image section
-        if image_url:
-            image_html = f"""
-            <img src='{image_url}' 
-                 style='width:100%;height:180px;object-fit:cover;
-                       border-top-left-radius:16px;border-top-right-radius:16px;margin-bottom:0;' 
-                 alt='{name_h1}' />
-            """
-        else:
-            image_html = """
-            <div style='width:100%;height:180px;display:flex;align-items:center;justify-content:center;
-                       background:#333;border-top-left-radius:16px;border-top-right-radius:16px;
-                       color:#ff6666;font-size:18px;'>
-                🌌 No image available
-            </div>
-            """
+        # Get object emoji
+        type_emoji = self._get_object_emoji(obj_data['type'])
         
-        # Text content
-        h1_html = f"<h1 style='color:#ffd700;margin:10px 0 0 0;font-size:1.5em;text-align:center;'>{name_h1}</h1>"
-        h2_html = f"<h2 style='color:#fff;margin:0 0 8px 0;font-size:1.1em;text-align:center;letter-spacing:1px;'>{name_h2}</h2>" if name_h2 else ""
-        
-        # Get appropriate emoji for object type
-        type_emoji = {"Star": "⭐", "Planet": "🪐", "Sun": "☀️", "Moon": "🌙"}.get(obj_data['type'], "🌌")
-        
-        details_html = f"""
-        <div style='text-align:center;color:#eee;font-size:0.95em;line-height:1.4;'>
-            <b>{type_emoji} Type:</b> {obj_data['type']}<br>
-            <b>🔺 Altitude:</b> {obj_data['altitude']}°<br>
-            <b>🧭 Azimuth:</b> {obj_data['azimuth']}°<br>
-            <b>✨ Constellation:</b> {constellation}
-        </div>
-        """
-        
-        # Description (truncated)
-        description_html = ""
-        if description and description != "Description not available.":
-            desc_content = (description[:MAX_DESC_LEN] + "..." 
-                           if len(description) > MAX_DESC_LEN 
-                           else description)
-            description_html = f"""
-            <h3 style='color:#bbb;font-size:0.9em;margin:8px 0 0 0;text-align:left;
-                      overflow-y:auto;max-height:60px;padding:0 5px;line-height:1.3;'>
-                {desc_content}
-            </h3>
-            """
-        
-        # Complete tile
-        tile_html = f"""
-        <div style='height:{TILE_HEIGHT}px; display:flex; flex-direction:column; 
-                   justify-content:space-between; border:2px solid #ffd700; 
-                   border-radius:18px; padding:0; margin-bottom:18px; 
-                   background:linear-gradient(135deg,#232526 0%,#414345 100%); 
-                   box-shadow:0 4px 24px rgba(0,0,0,0.6);
-                   transition: transform 0.2s ease-in-out;'>
-            <div>
-                {image_html}
-                <div style='padding: 0 10px;'>
-                    {h1_html}
-                    {h2_html}
-                    {details_html}
-                    {description_html}
-                </div>
-            </div>
-            <div style="flex-grow: 1;"></div>
-        </div>
-        """
-        
-        st.markdown(tile_html, unsafe_allow_html=True)
-        
-        # Expandable full description
-        if description and description != "Description not available." and len(description) > MAX_DESC_LEN:
-            with st.expander("📖 Read full description"):
-                st.markdown(f"<p style='color:#bbb;line-height:1.5;'>{description}</p>", 
-                           unsafe_allow_html=True)
+        # Create a simple container
+        with st.container():
+            # Add basic styling
+            st.markdown("""
+            <div style="border: 2px solid #ffd700; border-radius: 15px; padding: 15px; margin: 10px 0; background: linear-gradient(135deg, #232526 0%, #414345 100%); box-shadow: 0 4px 15px rgba(0,0,0,0.5);">
+            """, unsafe_allow_html=True)
+            
+            # Image section
+            if image_url and image_url.startswith(('http://', 'https://')):
+                try:
+                    st.image(image_url, width=200)
+                except:
+                    st.markdown(f"## {type_emoji} {name_h1}")
+            else:
+                st.markdown(f"## {type_emoji} {name_h1}")
+            
+            # Title and subtitle
+            st.markdown(f"### 🌟 {name_h1}")
+            if name_h2:
+                st.markdown(f"**{name_h2}**")
+            
+            # Object details
+            col1, col2 = st.columns(2)
+            with col1:
+                st.write(f"**{type_emoji} Type:** {obj_data['type']}")
+                st.write(f"**🔺 Altitude:** {obj_data['altitude']}°")
+            with col2:
+                st.write(f"**🧭 Azimuth:** {obj_data['azimuth']}°")
+                st.write(f"**✨ Constellation:** {constellation}")
+            
+            # Description
+            if description and description != "Description not available.":
+                desc_content = (description[:MAX_DESC_LEN] + "..." 
+                               if len(description) > MAX_DESC_LEN 
+                               else description)
+                st.write(f"**📖 Description:** {desc_content}")
+            
+            st.markdown("</div>", unsafe_allow_html=True)
+            
+            # Expandable full description
+            if description and description != "Description not available." and len(description) > MAX_DESC_LEN:
+                with st.expander("📖 Read full description"):
+                    st.write(description)
+    
+    def _get_object_emoji(self, obj_type):
+        """Get appropriate emoji for object type."""
+        return {"Star": "⭐", "Planet": "🪐", "Sun": "☀️", "Moon": "🌙"}.get(obj_type, "🌌")
     
     def create_object_tiles(self, objects):
         """
@@ -412,9 +388,18 @@ class MeraiApp:
     
     def run(self):
         """Run the main application."""
-        # Main title and description
-        st.title("🔭 Merai - A Space Detective")
-        st.markdown("*🌌 Explore the cosmos from your location and time*")
+        # Main title and description - centered
+        st.markdown(
+            """
+            <h1 style='text-align: center; color: #ffd700; margin-bottom: 0.5rem;'>
+                🔭 Merai - A Space Detective
+            </h1>
+            <p style='text-align: center; color: #b0b0b0; font-style: italic; font-size: 1.2rem; margin-bottom: 2rem;'>
+                🌌 Explore the cosmos from your location and time
+            </p>
+            """,
+            unsafe_allow_html=True
+        )
         st.markdown("---")
         
         # Render main sections
