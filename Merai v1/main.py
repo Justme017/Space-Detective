@@ -188,7 +188,8 @@ class MeraiApp:
         
         return combined_dt
     
-    def enhance_visible_objects(self, visible_objects):
+    @staticmethod
+    def enhance_visible_objects(visible_objects):
         """
         Enhance astronomical objects with additional information from Wikipedia.
         
@@ -231,7 +232,8 @@ class MeraiApp:
         
         return enhanced_objects
     
-    def create_object_tile_html(self, name_h1, name_h2, obj_data, constellation, description, image_url):
+    @staticmethod
+    def create_object_tile_html(name_h1, name_h2, obj_data, constellation, description, image_url):
         """
         Create object tile using minimal HTML to avoid rendering issues.
         
@@ -244,7 +246,7 @@ class MeraiApp:
             image_url (str): URL of object image
         """
         # Get object emoji
-        type_emoji = self._get_object_emoji(obj_data['type'])
+        type_emoji = MeraiApp._get_object_emoji(obj_data['type'])
         
         # Create a simple container
         with st.container():
@@ -257,7 +259,7 @@ class MeraiApp:
             if image_url and image_url.startswith(('http://', 'https://')):
                 try:
                     st.image(image_url, width=200)
-                except:
+                except Exception:
                     st.markdown(f"## {type_emoji} {name_h1}")
             else:
                 st.markdown(f"## {type_emoji} {name_h1}")
@@ -290,7 +292,8 @@ class MeraiApp:
                 with st.expander("📖 Read full description"):
                     st.write(description)
     
-    def _get_object_emoji(self, obj_type):
+    @staticmethod
+    def _get_object_emoji(obj_type):
         """Get appropriate emoji for object type."""
         return {"Star": "⭐", "Planet": "🪐", "Sun": "☀️", "Moon": "🌙"}.get(obj_type, "🌌")
     
@@ -386,9 +389,8 @@ class MeraiApp:
         else:
             st.info("ℹ️ No objects visible to display on sky chart.")
     
-    def run(self):
-        """Run the main application."""
-        # Main title and description - centered
+    def _render_header(self):
+        """Renders the header of the application."""
         st.markdown(
             """
             <h1 style='text-align: center; color: #ffd700; margin-bottom: 0.5rem;'>
@@ -401,8 +403,9 @@ class MeraiApp:
             unsafe_allow_html=True
         )
         st.markdown("---")
-        
-        # Render main sections
+
+    def _render_main_content(self):
+        """Renders the main content of the application."""
         self.render_location_section()
         dt = self.render_datetime_section()
         
@@ -441,13 +444,20 @@ class MeraiApp:
         
         # Render sky chart (always render, even if no objects)
         self.render_sky_chart_section(visible_objects, dt)
-        
-        # Footer
+
+    def _render_footer(self):
+        """Renders the footer of the application."""
         st.markdown("---")
         st.markdown(
             "🔭 **Merai - A Space Detective** | Built with ❤️ using Streamlit and Skyfield | "
             "Data from NASA JPL, Hipparcos, and Wikipedia"
         )
+
+    def run(self):
+        """Run the main application."""
+        self._render_header()
+        self._render_main_content()
+        self._render_footer()
 
 
 def main():
