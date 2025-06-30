@@ -111,29 +111,14 @@ class MeraiApp:
         if st.button("🌍 Detect My Location Now", type="primary"):
             with st.spinner("🔍 Detecting your location..."):
                 detected_lat, detected_lon, detected_address = get_user_location()
-                if detected_lat is not None and detected_lon is not None:
+                if detected_lat is None or detected_lon is None:
+                    st.info("⏳ Waiting for browser location permission... Please allow location access in your browser.")
+                    st.stop()
+                else:
                     st.session_state.latitude = detected_lat
                     st.session_state.longitude = detected_lon
                     st.session_state.address = detected_address
                     st.success(f"✅ Location detected: {detected_address}")
-                    st.rerun()
-                else:
-                    # Provide a default location with helpful message
-                    st.session_state.latitude = 40.7128  # NYC coordinates
-                    st.session_state.longitude = -74.0060
-                    st.session_state.address = "New York, NY (Default)"
-                    st.warning("""
-                        ⚠️ **Automatic location detection unavailable.**
-                        
-                        This can happen due to:
-                        • Browser privacy settings
-                        • Network restrictions  
-                        • Geolocation service limits
-                        
-                        **Using New York as default location.** You can:
-                        • 🗺️ Click on the map below to set your exact location
-                        • 🔄 Try the detect button again later
-                    """)
                     st.rerun()
     
     def handle_map_selection(self):
