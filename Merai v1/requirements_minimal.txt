@@ -1,0 +1,10 @@
+# Minimal requirements for testing deployment
+streamlit
+pandas
+numpy
+requests
+plotly
+skyfield
+beautifulsoup4
+streamlit-folium
+geocoder

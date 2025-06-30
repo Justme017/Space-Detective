@@ -45,5 +45,10 @@ echo 4. Select your repository
 echo 5. Set main file path: Merai v1/main.py
 echo 6. Click 'Deploy!'
 echo.
+echo 🔧 If you get dependency errors:
+echo - Check TROUBLESHOOTING.md for solutions
+echo - The requirements.txt has been optimized for Streamlit Cloud
+echo - Try waiting 5-10 minutes for the build to complete
+echo.
 echo Your app will be live at: https://your-app-name.streamlit.app
 pause
