@@ -116,7 +116,7 @@ class MeraiApp:
         if not st.session_state.location_detected:
             if st.button("\U0001F30D Detect My Location Now", type="primary"):
                 with st.spinner("\U0001F50D Detecting your location (browser)..."):
-                    # Use streamlit_javascript to get browser geolocation
+                    st.info("Please allow location access in your browser when prompted.")
                     location = st_javascript("""
                     async () => {
                         return await new Promise((resolve, reject) => {
@@ -138,6 +138,7 @@ class MeraiApp:
                         });
                     }
                     """)
+                    st.write("Debug: JS result:", location)  # Show raw result for debugging
                     if location and isinstance(location, dict) and 'lat' in location and 'lon' in location:
                         st.session_state.latitude = float(location['lat'])
                         st.session_state.longitude = float(location['lon'])
@@ -148,6 +149,7 @@ class MeraiApp:
                     elif location and isinstance(location, dict) and 'error' in location:
                         st.error(f"\u274C Could not detect your location: {location['error']}")
                         st.session_state.address = "Automatic Detection Failed"
+                        st.button("Retry Location Detection")
         else:
             st.success(f"\u2705 Location detected: {st.session_state.address}")
     
