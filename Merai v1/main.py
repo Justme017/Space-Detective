@@ -117,17 +117,32 @@ class MeraiApp:
 
         if not st.session_state.location_detected:
             if st.button("\U0001F30D Detect My Location Now", type="primary"):
+                # Increment request counter for cache busting
+                if 'location_request_count' not in st.session_state:
+                    st.session_state.location_request_count = 0
+                st.session_state.location_request_count += 1
                 with st.spinner("🌍 Getting your precise location..."):
                     # Use your Vercel geolocation service
+                    st.info("🔄 Connecting to geolocation service...")
+                    
                     location_data = st_javascript("""
                     () => {
                         return new Promise((resolve) => {
+                            console.log('Starting geolocation request...');
+                            
                             const iframe = document.createElement('iframe');
                             iframe.src = 'https://geolocation-page.vercel.app/';
                             iframe.style.display = 'none';
+                            iframe.style.width = '1px';
+                            iframe.style.height = '1px';
+                            
+                            let resolved = false;
                             
                             const messageHandler = (event) => {
-                                if (event.origin === 'https://geolocation-page.vercel.app') {
+                                console.log('Received message:', event.data, 'from:', event.origin);
+                                
+                                if (event.origin === 'https://geolocation-page.vercel.app' && !resolved) {
+                                    resolved = true;
                                     window.removeEventListener('message', messageHandler);
                                     document.body.removeChild(iframe);
                                     resolve(event.data);
@@ -137,46 +152,58 @@ class MeraiApp:
                             window.addEventListener('message', messageHandler);
                             document.body.appendChild(iframe);
                             
+                            // Give more time for the iframe to load and get location
                             setTimeout(() => {
-                                window.removeEventListener('message', messageHandler);
-                                if (document.body.contains(iframe)) {
-                                    document.body.removeChild(iframe);
+                                if (!resolved) {
+                                    console.log('Geolocation timeout after 20 seconds');
+                                    resolved = true;
+                                    window.removeEventListener('message', messageHandler);
+                                    if (document.body.contains(iframe)) {
+                                        document.body.removeChild(iframe);
+                                    }
+                                    resolve({error: 'Browser geolocation timeout - please allow location access'});
                                 }
-                                resolve({error: 'Browser geolocation timeout'});
-                            }, 15000);
+                            }, 20000);
                         });
                     }
-                    """, key="merai_geolocation_request")
+                    """, key=f"merai_geolocation_request_{st.session_state.get('location_request_count', 0)}")
+                    
+                    # Debug: Show what we received
+                    if location_data:
+                        st.write("🔍 **Debug - Received data:**", location_data)
                 
                 if location_data and "latitude" in location_data and "longitude" in location_data:
+                    st.success("🎯 **SUCCESS! GPS Location from Vercel service detected!**")
                     st.session_state.latitude = float(location_data["latitude"])
                     st.session_state.longitude = float(location_data["longitude"])
                     accuracy = location_data.get('accuracy', 'unknown')
                     st.session_state.address = f"GPS Location ({location_data['latitude']:.4f}, {location_data['longitude']:.4f}) ±{accuracy}m"
                     st.session_state.location_detected = True
-                    st.success(f"\u2705 Precise location detected: {st.session_state.address}")
+                    st.balloons()  # Celebrate successful GPS detection!
                     st.rerun()
                 elif location_data and "error" in location_data:
-                    st.warning(f"🌍 Browser geolocation failed: {location_data['error']}. Trying IP-based geolocation...")
+                    st.error(f"🌍 Vercel geolocation failed: {location_data['error']}")
+                    st.warning("🔄 Trying IP-based geolocation as fallback...")
                     ip_lat, ip_lon, ip_addr = get_user_location()
                     if ip_lat is not None and ip_lon is not None:
                         st.session_state.latitude = ip_lat
                         st.session_state.longitude = ip_lon
                         st.session_state.address = f"IP Location: {ip_addr}"
                         st.session_state.location_detected = True
-                        st.success(f"\u2705 Location detected by IP: {ip_addr}")
+                        st.info(f"\u2705 Fallback: Location detected by IP: {ip_addr}")
                         st.rerun()
                     else:
                         st.error("❌ Unable to retrieve location. Please select on map.")
                 else:
-                    st.warning("🌍 Browser geolocation unavailable. Trying IP-based geolocation...")
+                    st.error("🌍 No response from Vercel geolocation service.")
+                    st.warning("🔄 Trying IP-based geolocation as fallback...")
                     ip_lat, ip_lon, ip_addr = get_user_location()
                     if ip_lat is not None and ip_lon is not None:
                         st.session_state.latitude = ip_lat
                         st.session_state.longitude = ip_lon
                         st.session_state.address = f"IP Location: {ip_addr}"
                         st.session_state.location_detected = True
-                        st.success(f"\u2705 Location detected by IP: {ip_addr}")
+                        st.info(f"\u2705 Fallback: Location detected by IP: {ip_addr}")
                         st.rerun()
                     else:
                         st.error("❌ Unable to retrieve location. Please select on map.")
