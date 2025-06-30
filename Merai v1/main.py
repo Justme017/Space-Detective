@@ -110,8 +110,23 @@ class MeraiApp:
                     st.success(f"✅ Location detected: {detected_address}")
                     st.rerun()
                 else:
-                    st.session_state.address = "Automatic Detection Failed"
-                    st.error("❌ Could not automatically determine location. Please try selecting on the map.")
+                    # Provide a default location with helpful message
+                    st.session_state.latitude = 40.7128  # NYC coordinates
+                    st.session_state.longitude = -74.0060
+                    st.session_state.address = "New York, NY (Default)"
+                    st.warning("""
+                        ⚠️ **Automatic location detection unavailable.**
+                        
+                        This can happen due to:
+                        • Browser privacy settings
+                        • Network restrictions  
+                        • Geolocation service limits
+                        
+                        **Using New York as default location.** You can:
+                        • 🗺️ Click on the map below to set your exact location
+                        • 🔄 Try the detect button again later
+                    """)
+                    st.rerun()
     
     def handle_map_selection(self):
         """Handle manual location selection on map."""
