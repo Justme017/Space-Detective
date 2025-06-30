@@ -109,14 +109,14 @@ class MeraiApp:
     def handle_location_detection(self):
         """Handle automatic location detection using streamlit-geolocation."""
         import streamlit as st
-        from streamlit_geolocation import geolocation
+        from streamlit_geolocation import streamlit_geolocation
 
         if "location_detected" not in st.session_state:
             st.session_state.location_detected = False
 
         if not st.session_state.location_detected:
             if st.button("\U0001F30D Detect My Location Now", type="primary"):
-                loc = geolocation()
+                loc = streamlit_geolocation()
                 if loc and loc.get("latitude") is not None and loc.get("longitude") is not None:
                     st.session_state.latitude = float(loc["latitude"])
                     st.session_state.longitude = float(loc["longitude"])
