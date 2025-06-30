@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Location Detection</title>
+</head>
+<body>
+    <h3>Fetching your location...</h3>
+    <script>
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                function(position) {
+                    const locationData = {
+                        latitude: position.coords.latitude,
+                        longitude: position.coords.longitude
+                    };
+                    window.parent.postMessage(locationData, "*");
+                },
+                function(error) {
+                    const errorData = {
+                        error: error.message
+                    };
+                    window.parent.postMessage(errorData, "*");
+                }
+            );
+        } else {
+            const errorData = {
+                error: "Geolocation is not supported by this browser."
+            };
+            window.parent.postMessage(errorData, "*");
+        }
+    </script>
+</body>
+</html>
