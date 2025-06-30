@@ -9,3 +9,4 @@ beautifulsoup4>=4.11.0
 streamlit-folium>=0.13.0
 folium>=0.14.0
 streamlit-js-eval>=0.1.5
+streamlit_javascript>=0.1.5
