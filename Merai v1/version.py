@@ -13,8 +13,8 @@ VERSION_MINOR = 0
 VERSION_PATCH = 0
 
 # Release information
-RELEASE_NOTES_URL = "https://github.com/your-username/Space-Detective-1/releases/tag/v2.0.0"
-APP_URL = "https://your-space-detective-app.streamlit.app"
+RELEASE_NOTES_URL = "https://github.com/justme017/Space-Detective-1/releases/tag/v2.0.0"
+APP_URL = "https://space-detective.streamlit.app/"
 
 def get_version_string():
     """Get formatted version string."""
