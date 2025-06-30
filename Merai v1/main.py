@@ -108,8 +108,7 @@ class MeraiApp:
                 st.session_state[key] = default_value
     
     def handle_location_detection(self):
-        """Handle automatic location detection using HTML iframe and postMessage."""
-        import streamlit.components.v1 as components
+        """Handle automatic location detection using Vercel geolocation service."""
         from streamlit_javascript import st_javascript
         from location_utils import get_user_location
 
@@ -118,67 +117,76 @@ class MeraiApp:
 
         if not st.session_state.location_detected:
             if st.button("\U0001F30D Detect My Location Now", type="primary"):
-                # Use your deployed Vercel URL here
-                GEOLOCATION_SERVICE_URL = "https://geolocation-page.vercel.app"
-                
-                # Embed the geolocation iframe and listen for the result
-                location_data = st_javascript(f"""
-                new Promise((resolve) => {{
-                    const iframe = document.createElement('iframe');
-                    iframe.src = 'https://geolocation-page.vercel.app';
-                    iframe.style.width = '0px';
-                    iframe.style.height = '0px';
-                    iframe.style.border = 'none';
-                    iframe.style.display = 'none';
-                    
-                    window.addEventListener('message', function(event) {{
-                        if (event.origin === 'https://geolocation-page.vercel.app') {{
-                            resolve(event.data);
-                        }}
-                    }}, {{once: true}});
-                    
-                    document.body.appendChild(iframe);
-                    
-                    // Timeout after 10 seconds
-                    setTimeout(() => {{
-                        resolve(null);
-                    }}, 10000);
-                }})
-                """, key="geolocation_request")
+                with st.spinner("🌍 Getting your precise location..."):
+                    # Use your Vercel geolocation service
+                    location_data = st_javascript("""
+                    () => {
+                        return new Promise((resolve) => {
+                            const iframe = document.createElement('iframe');
+                            iframe.src = 'https://geolocation-page.vercel.app/';
+                            iframe.style.display = 'none';
+                            
+                            const messageHandler = (event) => {
+                                if (event.origin === 'https://geolocation-page.vercel.app') {
+                                    window.removeEventListener('message', messageHandler);
+                                    document.body.removeChild(iframe);
+                                    resolve(event.data);
+                                }
+                            };
+                            
+                            window.addEventListener('message', messageHandler);
+                            document.body.appendChild(iframe);
+                            
+                            setTimeout(() => {
+                                window.removeEventListener('message', messageHandler);
+                                if (document.body.contains(iframe)) {
+                                    document.body.removeChild(iframe);
+                                }
+                                resolve({error: 'Browser geolocation timeout'});
+                            }, 15000);
+                        });
+                    }
+                    """, key="merai_geolocation_request")
                 
                 if location_data and "latitude" in location_data and "longitude" in location_data:
                     st.session_state.latitude = float(location_data["latitude"])
                     st.session_state.longitude = float(location_data["longitude"])
-                    st.session_state.address = f"Browser Location ({location_data['latitude']:.4f}, {location_data['longitude']:.4f})"
+                    accuracy = location_data.get('accuracy', 'unknown')
+                    st.session_state.address = f"GPS Location ({location_data['latitude']:.4f}, {location_data['longitude']:.4f}) ±{accuracy}m"
                     st.session_state.location_detected = True
-                    st.success(f"\u2705 Location detected: {st.session_state.address}")
+                    st.success(f"\u2705 Precise location detected: {st.session_state.address}")
                     st.rerun()
                 elif location_data and "error" in location_data:
-                    st.warning(f"Browser geolocation failed: {location_data['error']}. Trying IP-based geolocation...")
+                    st.warning(f"🌍 Browser geolocation failed: {location_data['error']}. Trying IP-based geolocation...")
                     ip_lat, ip_lon, ip_addr = get_user_location()
                     if ip_lat is not None and ip_lon is not None:
                         st.session_state.latitude = ip_lat
                         st.session_state.longitude = ip_lon
-                        st.session_state.address = ip_addr
+                        st.session_state.address = f"IP Location: {ip_addr}"
                         st.session_state.location_detected = True
                         st.success(f"\u2705 Location detected by IP: {ip_addr}")
                         st.rerun()
                     else:
-                        st.error("Unable to retrieve location. Please select on map.")
+                        st.error("❌ Unable to retrieve location. Please select on map.")
                 else:
-                    st.warning("Unable to retrieve location from browser. Trying IP-based geolocation...")
+                    st.warning("🌍 Browser geolocation unavailable. Trying IP-based geolocation...")
                     ip_lat, ip_lon, ip_addr = get_user_location()
                     if ip_lat is not None and ip_lon is not None:
                         st.session_state.latitude = ip_lat
                         st.session_state.longitude = ip_lon
-                        st.session_state.address = ip_addr
+                        st.session_state.address = f"IP Location: {ip_addr}"
                         st.session_state.location_detected = True
                         st.success(f"\u2705 Location detected by IP: {ip_addr}")
                         st.rerun()
                     else:
-                        st.error("Unable to retrieve location. Please select on map.")
+                        st.error("❌ Unable to retrieve location. Please select on map.")
         else:
             st.success(f"\u2705 Location detected: {st.session_state.address}")
+            
+            # Add option to refresh location
+            if st.button("🔄 Refresh Location"):
+                st.session_state.location_detected = False
+                st.rerun()
     
     def handle_map_selection(self):
         """Handle manual location selection on map."""
@@ -231,10 +239,19 @@ class MeraiApp:
         
         # Show current location if set
         if st.session_state.address not in ["Not set", "Automatic Detection Failed"]:
-            st.success(
-                f"📍 **Current Location:** {st.session_state.address} "
-                f"({st.session_state.latitude:.2f}, {st.session_state.longitude:.2f})"
-            )
+            if "GPS Location" in st.session_state.address:
+                st.success(f"🎯 **Precise GPS Location Detected**")
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.metric("📍 Latitude", f"{st.session_state.latitude:.6f}")
+                with col2:
+                    st.metric("📍 Longitude", f"{st.session_state.longitude:.6f}")
+                st.info(f"📍 {st.session_state.address}")
+            else:
+                st.success(
+                    f"📍 **Current Location:** {st.session_state.address} "
+                    f"({st.session_state.latitude:.2f}, {st.session_state.longitude:.2f})"
+                )
     
     def render_datetime_section(self):
         """Render the date and time selection section."""
