@@ -461,15 +461,41 @@ class MeraiApp:
                                     survey_name = st.selectbox("Survey", list(survey_options.keys()))
                                     atlas_height = st.slider("Height (pixels)", 400, 800, 500, 50)
                             
-                            # Try the full online version
-                            aladin_lite_component(
-                                target=selected_target,
-                                key="aladin-lite-viewer",
-                                fov=fov,
-                                survey=survey_options[survey_name],
-                                height=atlas_height,
-                                show_catalog=show_catalogs
-                            )
+                            # Try the full online version with better error handling
+                            st.info("🌐 Loading professional sky atlas... This may take a few moments.")
+                            
+                            # Use a container to better handle potential issues
+                            atlas_container = st.container()
+                            with atlas_container:
+                                try:
+                                    aladin_lite_component(
+                                        target=selected_target,
+                                        key="aladin-lite-viewer",
+                                        fov=fov,
+                                        survey=survey_options[survey_name],
+                                        height=atlas_height,
+                                        show_catalog=show_catalogs
+                                    )
+                                except Exception as atlas_error:
+                                    st.error(f"🌐 **Online Atlas Error**: {str(atlas_error)}")
+                                    st.warning("""
+                                        **Having trouble with the online atlas?**
+                                        
+                                        This can happen due to:
+                                        - Network connectivity issues
+                                        - CDN service interruptions
+                                        - Browser security restrictions
+                                        
+                                        **💡 Try these solutions:**
+                                        1. Switch to "Local (Offline)" atlas above
+                                        2. Refresh the page and try again
+                                        3. Check your internet connection
+                                    """)
+                                    
+                                    # Provide quick switch option
+                                    if st.button("🔄 Switch to Local Atlas Now", key="quick-switch-local"):
+                                        st.session_state.atlas_version_new = "Local (Offline)"
+                                        st.rerun()
                             
                     except Exception as e:
                         st.error(f"Error loading {atlas_version} atlas: {str(e)}")

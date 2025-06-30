@@ -21,12 +21,16 @@
 
 ### 🌍 **Robust Location Detection**
 - **Multi-Service Detection**: Try multiple location services automatically
+- **Enhanced Accuracy**: Added ip-geolocation.io and ipinfo.io services for better precision
 - **Smart Fallbacks**: Never fails to provide a location
-  1. ipapi.co service (most reliable)
-  2. Geocoder IP method
-  3. HERE geocoding service
-  4. Default to NYC (always works)
+  1. ip-geolocation.io service (most accurate)
+  2. ipapi.co service (reliable)
+  3. ipinfo.io service (backup)
+  4. Geocoder IP method
+  5. HERE geocoding service
+  6. Default to NYC (always works)
 - **Better User Experience**: Clear error messages and helpful suggestions
+- **Coordinate Validation**: Ensures returned coordinates are valid
 - **Automatic Retry**: Users can easily try detection again
 
 ### 🎨 **Modern UI/UX Improvements**
@@ -57,15 +61,19 @@
 
 ### **Location Detection**
 - ✅ Fixed "Could not automatically determine location" errors
-- ✅ Added multiple fallback location services
+- ✅ Added multiple high-accuracy location services (ip-geolocation.io, ipinfo.io)
 - ✅ Improved network timeout handling
 - ✅ Better error messaging for users
+- ✅ Enhanced coordinate validation
+- ✅ More precise city/region detection
 
 ### **Sky Atlas**
-- ✅ Removed broken "Simple Online" atlas option
-- ✅ Improved Aladin Lite loading and error handling
+- ✅ Updated Aladin Lite to v3 API for better reliability
+- ✅ Improved CDN loading with proper error handling and retries
 - ✅ Enhanced local atlas interactivity
 - ✅ Fixed canvas rendering issues
+- ✅ Added graceful fallback from online to offline atlas
+- ✅ Better loading indicators and user feedback
 
 ### **UI/UX**
 - ✅ Fixed image rendering with proper container width

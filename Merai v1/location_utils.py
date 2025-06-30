@@ -18,9 +18,11 @@ def get_user_location():
         tuple: (latitude, longitude, address) if successful, (None, None, None) if failed
     """
     
-    # Try multiple location detection methods
+    # Try multiple location detection methods in order of reliability
     methods = [
+        _get_location_ip_geolocation,
         _get_location_ipapi,
+        _get_location_ipinfo,
         _get_location_geocoder_ip,
         _get_location_geocoder_here,
         _get_location_default
@@ -30,11 +32,34 @@ def get_user_location():
         try:
             lat, lon, address = method()
             if lat is not None and lon is not None:
-                return lat, lon, address
+                # Validate coordinates are reasonable
+                if -90 <= lat <= 90 and -180 <= lon <= 180:
+                    return lat, lon, address
         except Exception as e:
             # Log error but continue to next method
             continue
     
+    return None, None, None
+
+def _get_location_ip_geolocation():
+    """Try ip-geolocation.io service for more accurate location detection."""
+    try:
+        response = requests.get('https://api.ip-geolocation.io/ipgeo', timeout=5)
+        if response.status_code == 200:
+            data = response.json()
+            if 'latitude' in data and 'longitude' in data:
+                lat = float(data['latitude'])
+                lon = float(data['longitude'])
+                city = data.get('city', '')
+                state = data.get('state_prov', '')
+                country = data.get('country_name', '')
+                
+                # Create detailed address
+                address_parts = [part for part in [city, state, country] if part]
+                address = ', '.join(address_parts) if address_parts else "IP Geolocation"
+                return lat, lon, address
+    except:
+        pass
     return None, None, None
 
 def _get_location_ipapi():
@@ -49,6 +74,30 @@ def _get_location_ipapi():
                 city = data.get('city', '')
                 country = data.get('country_name', '')
                 address = f"{city}, {country}" if city and country else "Detected location"
+                return lat, lon, address
+    except:
+        pass
+    return None, None, None
+
+def _get_location_ipinfo():
+    """Try ipinfo.io service for location detection."""
+    try:
+        response = requests.get('https://ipinfo.io/json', timeout=5)
+        if response.status_code == 200:
+            data = response.json()
+            if 'loc' in data:
+                # ipinfo.io returns location as "lat,lon" string
+                lat_str, lon_str = data['loc'].split(',')
+                lat = float(lat_str.strip())
+                lon = float(lon_str.strip())
+                
+                city = data.get('city', '')
+                region = data.get('region', '')
+                country = data.get('country', '')
+                
+                # Create address from available data
+                address_parts = [part for part in [city, region, country] if part]
+                address = ', '.join(address_parts) if address_parts else "IPInfo location"
                 return lat, lon, address
     except:
         pass
