@@ -107,51 +107,31 @@ class MeraiApp:
                 st.session_state[key] = default_value
     
     def handle_location_detection(self):
-        """Handle automatic location detection using ONLY browser geolocation (no IP fallback)."""
-        from streamlit_javascript import st_javascript
+        """Handle automatic location detection using streamlit-geolocation."""
+        import streamlit as st
+        from streamlit_geolocation import geolocation
 
         if "location_detected" not in st.session_state:
             st.session_state.location_detected = False
 
         if not st.session_state.location_detected:
             if st.button("\U0001F30D Detect My Location Now", type="primary"):
-                with st.spinner("\U0001F50D Detecting your location (browser)..."):
-                    st.info("Please allow location access in your browser when prompted.")
-                    location = st_javascript("""
-                    async () => {
-                        return await new Promise((resolve, reject) => {
-                            if (navigator.geolocation) {
-                                navigator.geolocation.getCurrentPosition(
-                                    (pos) => {
-                                        resolve({
-                                            lat: pos.coords.latitude,
-                                            lon: pos.coords.longitude
-                                        });
-                                    },
-                                    (err) => {
-                                        resolve({error: err.message});
-                                    }
-                                );
-                            } else {
-                                resolve({error: 'Geolocation not supported'});
-                            }
-                        });
-                    }
-                    """)
-                    st.write("Debug: JS result:", location)  # Show raw result for debugging
-                    if location and isinstance(location, dict) and 'lat' in location and 'lon' in location:
-                        st.session_state.latitude = float(location['lat'])
-                        st.session_state.longitude = float(location['lon'])
-                        st.session_state.address = f"Browser Geolocation ({location['lat']:.4f}, {location['lon']:.4f})"
-                        st.session_state.location_detected = True
-                        st.success(f"\u2705 Location detected: {st.session_state.address}")
-                        st.rerun()
-                    elif location and isinstance(location, dict) and 'error' in location:
-                        st.error(f"\u274C Could not detect your location: {location['error']}")
-                        st.session_state.address = "Automatic Detection Failed"
-                        st.button("Retry Location Detection")
+                loc = geolocation()
+                if loc and loc.get("latitude") is not None and loc.get("longitude") is not None:
+                    st.session_state.latitude = float(loc["latitude"])
+                    st.session_state.longitude = float(loc["longitude"])
+                    st.session_state.address = f"User Location ({loc['latitude']:.4f}, {loc['longitude']:.4f})"
+                    st.session_state.location_detected = True
+                    st.success(f"\u2705 Location detected: {st.session_state.address}")
+                    st.write(f"Latitude: {loc['latitude']:.6f}")
+                    st.write(f"Longitude: {loc['longitude']:.6f}")
+                    st.rerun()
+                else:
+                    st.error("Unable to retrieve location. Please allow location access.")
         else:
             st.success(f"\u2705 Location detected: {st.session_state.address}")
+            st.write(f"Latitude: {st.session_state.latitude:.6f}")
+            st.write(f"Longitude: {st.session_state.longitude:.6f}")
     
     def handle_map_selection(self):
         """Handle manual location selection on map."""
