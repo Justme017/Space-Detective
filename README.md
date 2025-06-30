@@ -1,30 +1,47 @@
-# Merai - A Space Detective 🔭
+# Merai - A Space Detective 🔭 v2.0.0
 
-A beautiful and interactive Streamlit web application for exploring visible astronomical objects from any location and time. Discover planets, stars, and celestial objects with detailed information and an interactive sky chart.
+> **🚀 Now Live!** Experience the cosmos from anywhere - [Launch App](https://your-space-detective-app.streamlit.app)
+
+A beautiful and interactive Streamlit web application for exploring visible astronomical objects from any location and time. Discover planets, stars, and celestial objects with detailed information and an interactive sky atlas.
+
+## ✨ New in v2.0.0 - Live App Release
+
+- **🌐 Cloud Ready**: Optimized for Streamlit Cloud deployment
+- **🗺️ Interactive Sky Atlas**: Choose between Local (Offline) and Online (Aladin Lite) viewing modes
+- **� Enhanced Location Detection**: Multi-service location detection with smart fallbacks
+- **🔧 Robust Error Handling**: Professional-grade error management and user feedback
+- **📱 Modern UI/UX**: Responsive design with improved visual elements
+- **🚀 Production Ready**: Complete deployment documentation and troubleshooting guides
 
 ## ✨ Features
 
-- **🌍 Location Detection**: Automatic location detection or manual selection on an interactive map
-- **🕒 Custom Date/Time**: View the sky from any date and time
+- **🌍 Smart Location Detection**: Multi-service automatic location detection with manual map selection fallback
+- **🕒 Custom Date/Time**: View the sky from any date and time in history or future
 - **⭐ Celestial Objects**: Display visible planets, stars, and other astronomical objects
-- **📖 Rich Information**: Detailed descriptions and images from Wikipedia
-- **🌟 Interactive Sky Chart**: Visual representation of the night sky with zoom controls
-- **🎨 Beautiful UI**: Space-themed design with responsive layout
-- **✨ Constellation Mapping**: Star objects mapped to their constellations
+- **📖 Rich Information**: Detailed descriptions and images from Wikipedia integration
+- **🌟 Interactive Sky Atlas**: 
+  - **Local (Offline)**: Canvas-based interactive sky chart that works without internet
+  - **Online (Aladin Lite)**: Professional astronomical surveys with advanced features
+- **🎨 Beautiful UI**: Space-themed design with responsive layout and modern components
+- **✨ Constellation Mapping**: Star objects mapped to their constellations with detailed data
 
 ## 🚀 Quick Start
 
-### Prerequisites
+### 🌐 Use Online (Recommended)
+**[Launch the Live App →](https://your-space-detective-app.streamlit.app)**
 
-- Python 3.7 or higher
-- Internet connection (for API calls)
+### 💻 Run Locally
 
-### Installation
+#### Prerequisites
+- Python 3.9 or higher
+- Internet connection (for location detection and Wikipedia data)
+
+#### Installation
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/Justme017/Space-Detective
-cd "Space-Detective-1/Merai v1"
+git clone https://github.com/Justme017/Space-Detective-1
+cd "Space-Detective-1"
 ```
 
 2. Install dependencies:
@@ -34,25 +51,49 @@ pip install -r requirements.txt
 
 3. Run the application:
 ```bash
-streamlit run main.py
+streamlit run "Merai v1/main.py"
 ```
 
 4. Open your browser to `http://localhost:8501`
 
+## 🌐 Deploy Your Own
+
+### Streamlit Cloud (Recommended)
+1. Fork this repository
+2. Go to [share.streamlit.io](https://share.streamlit.io)
+3. Connect your GitHub account
+4. Create new app with:
+   - **Main file path**: `Merai v1/main.py`
+   - **Requirements file**: `requirements.txt` (auto-detected)
+5. Deploy!
+
+**📚 Full deployment guide**: See [DEPLOYMENT.md](DEPLOYMENT.md)
+
 ## 📁 Project Structure
 
 ```
-Merai v1/
-├── main.py                 # Main Streamlit application
-├── astro_utils.py          # Astronomical calculations and object detection
-├── wiki_utils.py           # Wikipedia API integration
-├── location_utils.py       # Location detection utilities
-├── constellation_utils.py  # Constellation mapping
-├── skychart_utils.py       # Sky chart generation
-├── requirements.txt        # Python dependencies
-├── de421.bsp              # JPL planetary ephemeris data
-├── hip_main.dat           # Hipparcos star catalog
-├── hygdata_v41.csv        # HYG star database
+Space-Detective/
+├── requirements.txt            # Python dependencies (for Streamlit Cloud)
+├── README.md                  # This file
+├── DEPLOYMENT.md              # Deployment instructions
+├── TROUBLESHOOTING.md         # Help and troubleshooting
+├── CHANGELOG.md               # Version history
+├── LICENSE.txt                # MIT License
+├── Merai v1/                  # Main application directory
+│   ├── main.py                # 🚀 Main Streamlit application
+│   ├── main_backup.py         # Backup version
+│   ├── main_cleaned.py        # Alternative version
+│   ├── astro_utils.py         # Astronomical calculations
+│   ├── wiki_utils.py          # Wikipedia integration
+│   ├── location_utils.py      # Location detection with fallbacks
+│   ├── constellation_utils.py # Constellation mapping
+│   ├── skychart_utils.py      # Sky chart generation
+│   ├── aladin_lite.py         # Online sky atlas integration
+│   ├── local_sky_atlas.py     # Offline sky atlas
+│   ├── de421.bsp              # JPL planetary ephemeris data
+│   ├── hip_main.dat           # Hipparcos star catalog
+│   └── hygdata_v41.csv        # HYG star database
+```
 └── test_imports.py        # Import verification script
 ```
 

@@ -1,12 +1,20 @@
 """
-Merai - A Space Detective
+Merai - A Space Detective v2.0.0
 
-A Streamlit web application for exploring visible astronomical objects from any location
-and time. This app provides detailed information about planets, stars, and other 
-celestial objects, along with an interactive sky chart.
+A production-ready Streamlit web application for exploring visible astronomical objects 
+from any location and time. This app provides detailed information about planets, stars, 
+and other celestial objects, along with interactive sky atlas visualization.
+
+Features:
+- Smart multi-service location detection
+- Interactive sky atlas (Local & Online modes)
+- Professional astronomical data integration
+- Beautiful responsive UI/UX
+- Cloud-ready deployment
 
 Author: Merai Development Team 
 License: MIT
+Version: 2.0.0 - Live App Release
 """
 
 import streamlit as st
@@ -514,8 +522,11 @@ class MeraiApp:
             <h1 style='text-align: center; color: #ffd700; margin-bottom: 0.5rem;'>
                 🔭 Merai - A Space Detective
             </h1>
-            <p style='text-align: center; color: #b0b0b0; font-style: italic; font-size: 1.2rem; margin-bottom: 2rem;'>
+            <p style='text-align: center; color: #b0b0b0; font-style: italic; font-size: 1.2rem; margin-bottom: 0.5rem;'>
                 🌌 Explore the cosmos from your location and time
+            </p>
+            <p style='text-align: center; color: #808080; font-size: 0.9rem; margin-bottom: 2rem;'>
+                v2.0.0 - Live App Release 🚀
             </p>
             """,
             unsafe_allow_html=True
