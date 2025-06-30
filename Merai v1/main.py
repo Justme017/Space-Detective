@@ -122,55 +122,96 @@ class MeraiApp:
                     st.session_state.location_request_count = 0
                 st.session_state.location_request_count += 1
                 with st.spinner("🌍 Getting your precise location..."):
-                    # Use your Vercel geolocation service
                     st.info("🔄 Connecting to geolocation service...")
                     
                     location_data = st_javascript("""
                     () => {
                         return new Promise((resolve) => {
-                            console.log('Starting geolocation request...');
+                            console.log('🚀 Starting Streamlit geolocation request...');
                             
                             const iframe = document.createElement('iframe');
                             iframe.src = 'https://geolocation-page.vercel.app/';
                             iframe.style.display = 'none';
                             iframe.style.width = '1px';
                             iframe.style.height = '1px';
+                            iframe.sandbox = 'allow-scripts allow-same-origin';
                             
                             let resolved = false;
+                            let messageCount = 0;
                             
                             const messageHandler = (event) => {
-                                console.log('Received message:', event.data, 'from:', event.origin);
+                                messageCount++;
+                                console.log(`📨 Message ${messageCount} received:`, event.data, 'from:', event.origin);
                                 
+                                // Accept messages from your Vercel domain
                                 if (event.origin === 'https://geolocation-page.vercel.app' && !resolved) {
+                                    console.log('✅ Valid message from Vercel, resolving...');
                                     resolved = true;
                                     window.removeEventListener('message', messageHandler);
-                                    document.body.removeChild(iframe);
-                                    resolve(event.data);
-                                }
-                            };
-                            
-                            window.addEventListener('message', messageHandler);
-                            document.body.appendChild(iframe);
-                            
-                            // Give more time for the iframe to load and get location
-                            setTimeout(() => {
-                                if (!resolved) {
-                                    console.log('Geolocation timeout after 20 seconds');
-                                    resolved = true;
-                                    window.removeEventListener('message', messageHandler);
+                                    
+                                    // Clean up iframe
                                     if (document.body.contains(iframe)) {
                                         document.body.removeChild(iframe);
                                     }
-                                    resolve({error: 'Browser geolocation timeout - please allow location access'});
+                                    
+                                    resolve(event.data);
+                                } else if (!resolved) {
+                                    console.log('⚠️ Message from unknown origin or already resolved:', event.origin);
                                 }
-                            }, 20000);
+                            };
+                            
+                            // Add message listener before creating iframe
+                            window.addEventListener('message', messageHandler);
+                            
+                            // Add iframe to DOM
+                            document.body.appendChild(iframe);
+                            console.log('📱 Iframe added to DOM, waiting for location...');
+                            
+                            // Timeout handler
+                            setTimeout(() => {
+                                if (!resolved) {
+                                    console.log(`⏰ Timeout after 25 seconds. Received ${messageCount} messages.`);
+                                    resolved = true;
+                                    window.removeEventListener('message', messageHandler);
+                                    
+                                    if (document.body.contains(iframe)) {
+                                        document.body.removeChild(iframe);
+                                    }
+                                    
+                                    resolve({
+                                        error: 'Timeout waiting for location',
+                                        debug: {
+                                            messagesReceived: messageCount,
+                                            timeoutAfter: '25 seconds'
+                                        }
+                                    });
+                                }
+                            }, 25000);
                         });
                     }
                     """, key=f"merai_geolocation_request_{st.session_state.get('location_request_count', 0)}")
                     
                     # Debug: Show what we received
-                    if location_data:
-                        st.write("🔍 **Debug - Received data:**", location_data)
+                    st.write("🔍 **Debug - Received data:**", location_data)
+                    st.write("🔍 **Debug - Data type:**", type(location_data))
+                    
+                    # More detailed debugging
+                    if location_data is None:
+                        st.error("❌ **DEBUG**: No data received from Vercel service (timeout)")
+                        st.info("💡 This means the iframe loaded but no postMessage was received")
+                    elif isinstance(location_data, dict):
+                        st.success("✅ **DEBUG**: Received dictionary data from Vercel")
+                        st.json(location_data)
+                        
+                        # Check if it's the location data we expect
+                        if "latitude" in location_data and "longitude" in location_data:
+                            st.success("🎯 **PERFECT**: Valid location data received!")
+                        elif "error" in location_data:
+                            st.warning("⚠️ **ERROR DATA**: Received error from Vercel service")
+                        else:
+                            st.warning("⚠️ **UNKNOWN**: Received unexpected data format")
+                    else:
+                        st.warning(f"⚠️ **DEBUG**: Unexpected data type: {type(location_data)}")
                 
                 if location_data and "latitude" in location_data and "longitude" in location_data:
                     st.success("🎯 **SUCCESS! GPS Location from Vercel service detected!**")
