@@ -1,27 +1,32 @@
 """
 Location utility functions for the Merai Space Detective application.
 
-Simple, reliable location detection using browser geolocation (preferred).
+Simple, reliable location detection using IP-based geolocation (ipapi.co).
 """
 
-from streamlit_js_eval import streamlit_js_eval
+import requests
 
 def get_user_location():
     """
-    Detect user's location using browser geolocation (preferred).
+    Detect user's location using ipapi.co (IP-based geolocation).
     Returns:
-        tuple: (latitude, longitude, address)
+        tuple: (latitude, longitude, address) or (None, None, None) if not available
     """
-    location = streamlit_js_eval(
-        js_expressions="navigator.geolocation.getCurrentPosition((pos)=>{return [pos.coords.latitude,pos.coords.longitude]})",
-        key="get_user_location"
-    )
-    if location is None:
-        return None, None, None
-    if isinstance(location, list) and len(location) == 2:
-        lat, lon = location
-        return lat, lon, "Browser Geolocation"
-    # Fallback: Default location (should only be used by main app if user denies or unavailable after waiting)
+    try:
+        response = requests.get('https://ipapi.co/json/', timeout=8)
+        if response.status_code == 200:
+            data = response.json()
+            if 'latitude' in data and 'longitude' in data:
+                lat = float(data['latitude'])
+                lon = float(data['longitude'])
+                city = data.get('city', '')
+                region = data.get('region', '')
+                country = data.get('country_name', '')
+                address_parts = [part for part in [city, region, country] if part]
+                address = ', '.join(address_parts) if address_parts else "IP-based Location"
+                return lat, lon, address
+    except Exception:
+        pass
     return None, None, None
 
 
