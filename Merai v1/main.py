@@ -16,7 +16,6 @@ import folium
 # Import custom modules (these contain the astronomy calculations)
 from astro_utils import get_visible_objects
 from wiki_utils import get_object_image_url, get_object_description, extract_name_from_description
-from location_utils import get_user_location
 from constellation_utils import load_constellation_data
 from skychart_utils import create_sky_chart
 
@@ -107,13 +106,13 @@ class MeraiApp:
     
     def handle_location_detection(self):
         """
-        Handle automatic location detection with priority on Vercel GPS service.
+        Handle automatic location detection using only GPS service.
         
-        This method prioritizes GPS accuracy:
+        This method provides GPS-based location detection:
         1. Browser GPS through Vercel-hosted service (PRIMARY - most accurate)
         2. Extended wait time for GPS response
-        3. IP-based geolocation only as final fallback
-        4. Manual map selection if everything fails
+        3. Manual map selection if GPS fails or is denied
+        4. No IP-based fallback - only precise GPS or user selection
         """
         if not st.session_state.location_detected:
             if st.button("🌍 Detect My Location", type="primary"):
@@ -137,20 +136,17 @@ class MeraiApp:
                         # Show user-friendly message and offer alternatives
                         if "denied" in error_msg.lower() or "permission" in error_msg.lower():
                             st.info("💡 **To enable GPS:** Refresh the page and click 'Allow' when prompted")
-                            st.info("📍 **Alternative:** Use the map selection below or try again")
+                            st.info("📍 **Alternative:** Use the map selection below to manually choose your location")
                             
-                            # Give user choice instead of auto-fallback
-                            col1, col2 = st.columns(2)
-                            with col1:
-                                if st.button("🔄 Try GPS Again"):
-                                    st.rerun()
-                            with col2:
-                                if st.button("📍 Use Approximate Location"):
-                                    self._try_ip_location()
+                            # Give user choice: try again or use manual selection
+                            if st.button("🔄 Try GPS Again"):
+                                st.rerun()
+                            st.info("👇 **Or scroll down to use the interactive map for manual location selection**")
                         else:
-                            # For other GPS errors, offer IP fallback
-                            if st.button("📍 Use Approximate Location (Less Accurate)"):
-                                self._try_ip_location()
+                            # For other GPS errors, encourage manual selection
+                            st.info("📍 **Please use the interactive map below to manually select your location**")
+                            if st.button("� Try GPS Again"):
+                                st.rerun()
                         
                     else:
                         # No response from GPS service (timeout or service issue)
@@ -160,14 +156,13 @@ class MeraiApp:
                         st.info("   • Browser security settings")
                         st.info("   • Service temporarily unavailable")
                         
-                        # Give user options instead of immediate fallback
+                        # Give user options: try again or use manual selection
                         col1, col2 = st.columns(2)
                         with col1:
                             if st.button("🔄 Try GPS Again"):
                                 st.rerun()
                         with col2:
-                            if st.button("📍 Use Approximate Location"):
-                                self._try_ip_location()
+                            st.info("� **Use the map below to select your location manually**")
         else:
             # Location already detected, show it and offer refresh option
             st.success(f"✅ Location detected: {st.session_state.address}")
@@ -267,33 +262,7 @@ class MeraiApp:
         st.session_state.location_detected = True
         st.balloons()  # Celebrate success!
         st.rerun()
-    
-    def _try_ip_location(self):
-        """
-        Try IP-based geolocation ONLY when explicitly requested as fallback.
-        This is intentionally less prominent than GPS to encourage GPS usage.
-        """
-        with st.spinner("📍 Getting approximate location from IP address..."):
-            st.info("⚠️ Using IP-based location (less accurate than GPS)")
-            
-            ip_lat, ip_lon, ip_addr = get_user_location()
-            if ip_lat is not None and ip_lon is not None:
-                st.session_state.latitude = ip_lat
-                st.session_state.longitude = ip_lon
-                st.session_state.address = f"IP Location: {ip_addr}"
-                st.session_state.location_detected = True
-                
-                # Show accuracy warning
-                st.warning("📍 **IP Location Detected** - Accuracy: City level (~5-50km)")
-                st.info(f"📍 Location: {ip_addr}")
-                st.info("💡 **For better accuracy:** Try GPS detection again or use the map")
-                st.rerun()
-            else:
-                st.error("❌ IP-based location detection also failed.")
-                st.info("🗺️ **Please use the map below to set your location manually**")
-                st.session_state.location_choice = "Select on map"
-                st.rerun()
-    
+      
     def handle_map_selection(self):
         """Handle manual location selection using an interactive map."""
         st.subheader("🗺️ Click on the map to set your location")
@@ -361,21 +330,11 @@ class MeraiApp:
                     st.metric("📍 Longitude", f"{st.session_state.longitude:.6f}")
                 st.success(f"🎯 {st.session_state.address}")
                 st.info("✨ **Perfect!** You're using the most accurate location method")
-                
-            elif "IP Location" in st.session_state.address:
-                st.warning("📍 **APPROXIMATE IP Location** 🌐")
-                col1, col2 = st.columns(2)
-                with col1:
-                    st.metric("📍 Latitude", f"{st.session_state.latitude:.2f}")
-                with col2:
-                    st.metric("📍 Longitude", f"{st.session_state.longitude:.2f}")
-                st.warning(f"⚠️ {st.session_state.address}")
-                st.info("💡 **For better accuracy:** Try GPS detection or use the map")
-                
             else:
+                # Manual or other location selection
                 st.success(
                     f"📍 **Current Location:** {st.session_state.address} "
-                    f"({st.session_state.latitude:.2f}, {st.session_state.longitude:.2f})"
+                    f"({st.session_state.latitude:.4f}, {st.session_state.longitude:.4f})"
                 )
     
     def render_datetime_section(self):
