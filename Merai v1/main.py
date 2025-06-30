@@ -108,13 +108,12 @@ class MeraiApp:
     
     def handle_location_detection(self):
         """Handle automatic location detection."""
+        if "location_detected" not in st.session_state:
+            st.session_state.location_detected = False
+
         if st.button("🌍 Detect My Location Now", type="primary"):
             with st.spinner("🔍 Detecting your location..."):
-                # Only call get_user_location if not already set
-                if (
-                    st.session_state.get('latitude', 0.0) == 0.0 or
-                    st.session_state.get('address', 'Not set') in ["Not set", "Automatic Detection Failed"]
-                ):
+                if not st.session_state.location_detected:
                     detected_lat, detected_lon, detected_address = get_user_location()
                     if detected_lat is None or detected_lon is None:
                         st.info("⏳ Waiting for browser location permission... Please allow location access in your browser.")
@@ -123,6 +122,7 @@ class MeraiApp:
                         st.session_state.latitude = detected_lat
                         st.session_state.longitude = detected_lon
                         st.session_state.address = detected_address
+                        st.session_state.location_detected = True
                         st.success(f"✅ Location detected: {detected_address}")
                         st.rerun()
                 else:
