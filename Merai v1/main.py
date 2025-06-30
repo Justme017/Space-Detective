@@ -122,8 +122,22 @@ class MeraiApp:
                     st.session_state.location_request_count = 0
                 st.session_state.location_request_count += 1
                 with st.spinner("🌍 Getting your precise location..."):
-                    # Use your Vercel geolocation service
-                    st.info("🔄 Connecting to geolocation service...")
+                    # Add a visible test first
+                    st.info("🔄 Testing Vercel service visibility...")
+                    
+                    # Show iframe for debugging (temporary)
+                    import streamlit.components.v1 as components
+                    components.html(f"""
+                    <div style="border: 2px solid #ccc; padding: 10px; margin: 10px 0;">
+                        <h4>Debug: Vercel Service Test</h4>
+                        <iframe src="https://geolocation-page.vercel.app/" 
+                                width="100%" height="200" 
+                                style="border: 1px solid #ddd;">
+                        </iframe>
+                    </div>
+                    """, height=250)
+                    
+                    st.info("🔄 Now attempting invisible connection...")
                     
                     location_data = st_javascript("""
                     () => {
@@ -169,8 +183,17 @@ class MeraiApp:
                     """, key=f"merai_geolocation_request_{st.session_state.get('location_request_count', 0)}")
                     
                     # Debug: Show what we received
-                    if location_data:
-                        st.write("🔍 **Debug - Received data:**", location_data)
+                    st.write("🔍 **Debug - Received data:**", location_data)
+                    st.write("🔍 **Debug - Data type:**", type(location_data))
+                    
+                    # More detailed debugging
+                    if location_data is None:
+                        st.error("❌ **DEBUG**: No data received from Vercel service (timeout)")
+                    elif isinstance(location_data, dict):
+                        st.success("✅ **DEBUG**: Received dictionary data from Vercel")
+                        st.json(location_data)
+                    else:
+                        st.warning(f"⚠️ **DEBUG**: Unexpected data type: {type(location_data)}")
                 
                 if location_data and "latitude" in location_data and "longitude" in location_data:
                     st.success("🎯 **SUCCESS! GPS Location from Vercel service detected!**")
