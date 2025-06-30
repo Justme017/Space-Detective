@@ -1,47 +1,30 @@
-# Merai - A Space Detective 🔭 v2.0.0
+# Merai - A Space Detective 🔭
 
-> **🚀 Now Live!** Experience the cosmos from anywhere - [Launch App](https://your-space-detective-app.streamlit.app)
-
-A beautiful and interactive Streamlit web application for exploring visible astronomical objects from any location and time. Discover planets, stars, and celestial objects with detailed information and an interactive sky atlas.
-
-## ✨ New in v2.0.0 - Live App Release
-
-- **🌐 Cloud Ready**: Optimized for Streamlit Cloud deployment
-- **🗺️ Interactive Sky Atlas**: Choose between Local (Offline) and Online (Aladin Lite) viewing modes
-- **� Enhanced Location Detection**: Multi-service location detection with smart fallbacks
-- **🔧 Robust Error Handling**: Professional-grade error management and user feedback
-- **📱 Modern UI/UX**: Responsive design with improved visual elements
-- **🚀 Production Ready**: Complete deployment documentation and troubleshooting guides
+A beautiful and interactive Streamlit web application for exploring visible astronomical objects from any location and time. Discover planets, stars, and celestial objects with detailed information and an interactive sky chart.
 
 ## ✨ Features
 
-- **🌍 Smart Location Detection**: Multi-service automatic location detection with manual map selection fallback
-- **🕒 Custom Date/Time**: View the sky from any date and time in history or future
+- **🌍 Location Detection**: Automatic location detection or manual selection on an interactive map
+- **🕒 Custom Date/Time**: View the sky from any date and time
 - **⭐ Celestial Objects**: Display visible planets, stars, and other astronomical objects
-- **📖 Rich Information**: Detailed descriptions and images from Wikipedia integration
-- **🌟 Interactive Sky Atlas**: 
-  - **Local (Offline)**: Canvas-based interactive sky chart that works without internet
-  - **Online (Aladin Lite)**: Professional astronomical surveys with advanced features
-- **🎨 Beautiful UI**: Space-themed design with responsive layout and modern components
-- **✨ Constellation Mapping**: Star objects mapped to their constellations with detailed data
+- **📖 Rich Information**: Detailed descriptions and images from Wikipedia
+- **🌟 Interactive Sky Chart**: Visual representation of the night sky with zoom controls
+- **🎨 Beautiful UI**: Space-themed design with responsive layout
+- **✨ Constellation Mapping**: Star objects mapped to their constellations
 
 ## 🚀 Quick Start
 
-### 🌐 Use Online (Recommended)
-**[Launch the Live App →](https://your-space-detective-app.streamlit.app)**
+### Prerequisites
 
-### 💻 Run Locally
+- Python 3.7 or higher
+- Internet connection (for API calls)
 
-#### Prerequisites
-- Python 3.9 or higher
-- Internet connection (for location detection and Wikipedia data)
-
-#### Installation
+### Installation
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/Justme017/Space-Detective-1
-cd "Space-Detective-1"
+git clone https://github.com/Justme017/Space-Detective
+cd "Space-Detective-1/Merai v1"
 ```
 
 2. Install dependencies:
@@ -49,51 +32,28 @@ cd "Space-Detective-1"
 pip install -r requirements.txt
 ```
 
-3. Run the application:
-```bash
-streamlit run "Merai v1/main.py"
-```
+3. **Run the application**
+   ```bash
+   cd "Merai v1"
+   streamlit run main.py
+   ```
 
-4. Open your browser to `http://localhost:8501`
-
-## 🌐 Deploy Your Own
-
-### Streamlit Cloud (Recommended)
-1. Fork this repository
-2. Go to [share.streamlit.io](https://share.streamlit.io)
-3. Connect your GitHub account
-4. Create new app with:
-   - **Main file path**: `Merai v1/main.py`
-   - **Requirements file**: `requirements.txt` (auto-detected)
-5. Deploy!
-
-**📚 Full deployment guide**: See [DEPLOYMENT.md](DEPLOYMENT.md)
+4. **Open your browser** to `http://localhost:8501` and start exploring!
 
 ## 📁 Project Structure
 
 ```
-Space-Detective/
-├── requirements.txt            # Python dependencies (for Streamlit Cloud)
-├── README.md                  # This file
-├── DEPLOYMENT.md              # Deployment instructions
-├── TROUBLESHOOTING.md         # Help and troubleshooting
-├── CHANGELOG.md               # Version history
-├── LICENSE.txt                # MIT License
-├── Merai v1/                  # Main application directory
-│   ├── main.py                # 🚀 Main Streamlit application
-│   ├── main_backup.py         # Backup version
-│   ├── main_cleaned.py        # Alternative version
-│   ├── astro_utils.py         # Astronomical calculations
-│   ├── wiki_utils.py          # Wikipedia integration
-│   ├── location_utils.py      # Location detection with fallbacks
-│   ├── constellation_utils.py # Constellation mapping
-│   ├── skychart_utils.py      # Sky chart generation
-│   ├── aladin_lite.py         # Online sky atlas integration
-│   ├── local_sky_atlas.py     # Offline sky atlas
-│   ├── de421.bsp              # JPL planetary ephemeris data
-│   ├── hip_main.dat           # Hipparcos star catalog
-│   └── hygdata_v41.csv        # HYG star database
-```
+Merai v1/
+├── main.py                 # Main Streamlit application
+├── astro_utils.py          # Astronomical calculations and object detection
+├── wiki_utils.py           # Wikipedia API integration
+├── location_utils.py       # Location detection utilities
+├── constellation_utils.py  # Constellation mapping
+├── skychart_utils.py       # Sky chart generation
+├── requirements.txt        # Python dependencies
+├── de421.bsp              # JPL planetary ephemeris data
+├── hip_main.dat           # Hipparcos star catalog
+├── hygdata_v41.csv        # HYG star database
 └── test_imports.py        # Import verification script
 ```
 
@@ -173,61 +133,6 @@ ZOOM_LEVELS = [0.7, 1.0, 1.3, 1.6, 2.0]  # Available zoom levels
 - `de421.bsp`: JPL planetary ephemeris (required)
 - `hip_main.dat`: Hipparcos star catalog (required)
 - `hygdata_v41.csv`: HYG star database with constellations (optional)
-
-## 🧪 Testing
-
-Run the import test to verify all modules:
-```bash
-python test_imports.py
-```
-
-Expected output:
-```
-✅ astro_utils imported successfully
-✅ wiki_utils imported successfully
-✅ location_utils imported successfully
-✅ constellation_utils imported successfully
-✅ skychart_utils imported successfully
-🎉 All critical modules imported successfully!
-```
-
-## 🔧 Troubleshooting
-
-### Common Issues
-
-1. **Import Errors**
-   - Ensure all dependencies are installed: `pip install -r requirements.txt`
-   - Check Python version: `python --version` (requires 3.7+)
-
-2. **Location Detection Fails**
-   - Check internet connection
-   - Try manual map selection instead
-   - Firewall might block geocoding requests
-
-3. **No Objects Visible**
-   - Try different times of day (night shows more stars)
-   - Adjust location (some locations have limited visibility)
-   - Check that data files are present
-
-4. **Sky Chart Not Loading**
-   - Ensure `skychart_utils.py` is present
-   - Check plotly installation: `pip install plotly`
-
-## 📊 Performance
-
-- **Startup time**: ~2-3 seconds (loading catalogs)
-- **Object calculation**: ~1-2 seconds per location/time
-- **Wikipedia API**: ~0.5 seconds per object
-- **Memory usage**: ~50-100 MB (depending on catalog size)
-
-## 🌟 Future Enhancements
-
-- **Offline mode**: Cache Wikipedia data for offline use
-- **Mobile optimization**: Enhanced mobile interface
-- **More object types**: Add comets, asteroids, satellites
-- **Observation planning**: Best viewing times calculator
-- **Export features**: Save observations and sky charts
-- **Multi-language**: Support for multiple languages
 
 ## 📄 License
 

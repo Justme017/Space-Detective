@@ -1,11 +1,26 @@
-# Streamlit app requirements
-streamlit>=1.28.0
-pandas>=1.5.0
-numpy>=1.21.0
-requests>=2.28.0
-plotly>=5.15.0
-skyfield>=1.46
-beautifulsoup4>=4.11.0
-streamlit-folium>=0.13.0
-folium>=0.14.0
-streamlit_javascript>=0.1.5
+# Merai - A Space Detective: Required Python Packages
+
+# Install these packages using: pip install -r requirements.txt
+
+
+# Core web application framework
+streamlit>=1.28.0          # Main framework for creating the web app
+
+# Data processing and scientific computing
+pandas>=1.5.0              # Data manipulation and analysis
+numpy>=1.21.0              # Numerical computing (used by other packages)
+
+# Astronomy and space calculations
+skyfield>=1.46             # Astronomical calculations and celestial mechanics
+
+# Web requests and data fetching
+requests>=2.28.0           # HTTP requests for APIs (Wikipedia, IP location)
+beautifulsoup4>=4.11.0     # HTML parsing for cleaning Wikipedia content
+
+# Interactive visualizations and maps  
+plotly>=5.15.0             # Interactive charts (sky charts)
+streamlit-folium>=0.13.0   # Interactive maps in Streamlit
+folium>=0.14.0             # Map generation library
+
+# JavaScript integration
+streamlit_javascript>=0.1.5 # Execute JavaScript code in Streamlit (for GPS location)

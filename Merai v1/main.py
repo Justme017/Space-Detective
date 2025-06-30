@@ -1,17 +1,6 @@
 """
 Merai - A Space Detective v2.0.0
 
-A production-ready Streamlit web application for exploring visible astronomical objects 
-from any location and time. This app provides detailed information about planets, stars, 
-and other celestial objects, along with interactive sky atlas visualization.
-
-Features:
-- Smart multi-service location detection
-- Interactive sky atlas (Local & Online modes)
-- Professional astronomical data integration
-- Beautiful responsive UI/UX
-- Cloud-ready deployment
-
 Author: Merai Development Team 
 License: MIT
 Version: 2.0.0 - Live App Release
@@ -24,21 +13,18 @@ from streamlit_folium import st_folium
 from streamlit_javascript import st_javascript
 import folium
 
-# Import custom modules
+# Import custom modules (these contain the astronomy calculations)
 from astro_utils import get_visible_objects
 from wiki_utils import get_object_image_url, get_object_description, extract_name_from_description
 from location_utils import get_user_location
 from constellation_utils import load_constellation_data
 from skychart_utils import create_sky_chart
-from aladin_lite import aladin_lite_component
-from local_sky_atlas import local_sky_atlas_component
 
-# Configuration constants
-MAX_DESC_LEN = 120
-TILE_HEIGHT = 550
-ZOOM_LEVELS = [0.7, 1.0, 1.3, 1.6, 2.0]
+# Configuration constants - these control the app behavior
+MAX_DESC_LEN = 120  # Maximum description length to display
+ZOOM_LEVELS = [0.7, 1.0, 1.3, 1.6, 2.0]  # Available zoom levels for sky chart
 
-# Global data - load once at startup
+# Load constellation data once at startup (this is more efficient)
 CONSTELLATION_MAP = load_constellation_data()
 
 
@@ -46,13 +32,13 @@ class MeraiApp:
     """Main application class for the Merai Space Detective."""
     
     def __init__(self):
-        """Initialize the Merai application."""
+        """Initialize the application with page settings and styling."""
         self.setup_page_config()
         self.apply_custom_styling()
         self.initialize_session_state()
     
     def setup_page_config(self):
-        """Configure Streamlit page settings."""
+        """Configure basic Streamlit page settings."""
         st.set_page_config(
             page_title="Merai - A Space Detective",
             page_icon="🔭",
@@ -65,21 +51,30 @@ class MeraiApp:
         st.markdown(
             """
             <style>
+                        /* Main app background with space gradient */
             .stApp {
                 background: linear-gradient(120deg, #0f2027 0%, #2c5364 100%);
             }
+            
+                       /* Content container with dark space theme */
             .block-container {
                 background: rgba(20, 20, 30, 0.85);
                 border-radius: 18px;
                 padding: 2rem 2rem 1rem 2rem;
                 box-shadow: 0 8px 32px rgba(0,0,0,0.6);
             }
+            
+                     /* Make headers golden like stars */
             h1, h2, h3, h4, h5, h6 {
                 color: #ffd700 !important;
             }
+            
+                     /* Style radio buttons for better visibility */
             .stRadio > div {
                 color: #f1f1f1;
             }
+            
+                     /* Style metric containers */
             .stMetric {
                 background: rgba(255, 215, 0, 0.1);
                 padding: 1rem;
@@ -93,6 +88,7 @@ class MeraiApp:
     
     def initialize_session_state(self):
         """Initialize all session state variables with default values."""
+        # Session state keeps track of user selections between app reruns
         defaults = {
             'location_choice': "Detect my location",
             'latitude': 0.0,
@@ -100,173 +96,153 @@ class MeraiApp:
             'address': "Not set",
             'user_selected_date': date.today(),
             'user_selected_time': datetime.now().time(),
-            'sky_zoom': 1.0
+            'sky_zoom': 1.0,
+            'location_detected': False
         }
         
+        # Only set values that haven't been set yet
         for key, default_value in defaults.items():
             if key not in st.session_state:
                 st.session_state[key] = default_value
     
     def handle_location_detection(self):
-        """Handle automatic location detection using Vercel geolocation service."""
-        from streamlit_javascript import st_javascript
-        from location_utils import get_user_location
-
-        if "location_detected" not in st.session_state:
-            st.session_state.location_detected = False
-
+        """
+        Handle automatic location detection using browser GPS or IP geolocation.
+        
+        This method tries multiple approaches for the best user experience:
+        1. Browser GPS through a Vercel-hosted service (most accurate)
+        2. IP-based geolocation (fallback, less accurate)
+        3. Manual map selection (if both automatic methods fail)
+        """
         if not st.session_state.location_detected:
-            if st.button("\U0001F30D Detect My Location Now", type="primary"):
-                # Increment request counter for cache busting
-                if 'location_request_count' not in st.session_state:
-                    st.session_state.location_request_count = 0
-                st.session_state.location_request_count += 1
-                with st.spinner("🌍 Getting your precise location..."):
-                    st.info("🔄 Connecting to geolocation service...")
+            if st.button("🌍 Detect My Location", type="primary"):
+                with st.spinner("🔍 Getting your location..."):
+                    # Try GPS location first
+                    st.info("📡 Attempting GPS location detection...")
+                    location_data = self._get_gps_location()
                     
-                    location_data = st_javascript("""
-                    () => {
-                        return new Promise((resolve) => {
-                            console.log('🚀 Starting Streamlit geolocation request...');
-                            
-                            const iframe = document.createElement('iframe');
-                            iframe.src = 'https://geolocation-page.vercel.app/';
-                            iframe.style.display = 'none';
-                            iframe.style.width = '1px';
-                            iframe.style.height = '1px';
-                            iframe.sandbox = 'allow-scripts allow-same-origin';
-                            
-                            let resolved = false;
-                            let messageCount = 0;
-                            
-                            const messageHandler = (event) => {
-                                messageCount++;
-                                console.log(`📨 Message ${messageCount} received:`, event.data, 'from:', event.origin);
-                                
-                                // Accept messages from your Vercel domain
-                                if (event.origin === 'https://geolocation-page.vercel.app' && !resolved) {
-                                    console.log('✅ Valid message from Vercel, resolving...');
-                                    resolved = true;
-                                    window.removeEventListener('message', messageHandler);
-                                    
-                                    // Clean up iframe
-                                    if (document.body.contains(iframe)) {
-                                        document.body.removeChild(iframe);
-                                    }
-                                    
-                                    resolve(event.data);
-                                } else if (!resolved) {
-                                    console.log('⚠️ Message from unknown origin or already resolved:', event.origin);
-                                }
-                            };
-                            
-                            // Add message listener before creating iframe
-                            window.addEventListener('message', messageHandler);
-                            
-                            // Add iframe to DOM
-                            document.body.appendChild(iframe);
-                            console.log('📱 Iframe added to DOM, waiting for location...');
-                            
-                            // Timeout handler
-                            setTimeout(() => {
-                                if (!resolved) {
-                                    console.log(`⏰ Timeout after 25 seconds. Received ${messageCount} messages.`);
-                                    resolved = true;
-                                    window.removeEventListener('message', messageHandler);
-                                    
-                                    if (document.body.contains(iframe)) {
-                                        document.body.removeChild(iframe);
-                                    }
-                                    
-                                    resolve({
-                                        error: 'Timeout waiting for location',
-                                        debug: {
-                                            messagesReceived: messageCount,
-                                            timeoutAfter: '25 seconds'
-                                        }
-                                    });
-                                }
-                            }, 25000);
-                        });
-                    }
-                    """, key=f"merai_geolocation_request_{st.session_state.get('location_request_count', 0)}")
-                    
-                    # Debug: Show what we received
-                    st.write("🔍 **Debug - Received data:**", location_data)
-                    st.write("🔍 **Debug - Data type:**", type(location_data))
-                    
-                    # More detailed debugging
-                    if location_data is None:
-                        st.error("❌ **DEBUG**: No data received from Vercel service (timeout)")
-                        st.info("💡 This means the iframe loaded but no postMessage was received")
-                    elif isinstance(location_data, dict):
-                        st.success("✅ **DEBUG**: Received dictionary data from Vercel")
-                        st.json(location_data)
+                    if location_data and "latitude" in location_data and "longitude" in location_data:
+                        # Success! GPS location detected
+                        self._set_location_from_gps(location_data)
                         
-                        # Check if it's the location data we expect
-                        if "latitude" in location_data and "longitude" in location_data:
-                            st.success("🎯 **PERFECT**: Valid location data received!")
-                        elif "error" in location_data:
-                            st.warning("⚠️ **ERROR DATA**: Received error from Vercel service")
-                        else:
-                            st.warning("⚠️ **UNKNOWN**: Received unexpected data format")
+                    elif location_data and "error" in location_data:
+                        # GPS failed, try IP geolocation
+                        st.warning("🌍 GPS unavailable. Trying IP-based location...")
+                        self._try_ip_location()
+                        
                     else:
-                        st.warning(f"⚠️ **DEBUG**: Unexpected data type: {type(location_data)}")
-                
-                if location_data and "latitude" in location_data and "longitude" in location_data:
-                    st.success("🎯 **SUCCESS! GPS Location from Vercel service detected!**")
-                    st.session_state.latitude = float(location_data["latitude"])
-                    st.session_state.longitude = float(location_data["longitude"])
-                    accuracy = location_data.get('accuracy', 'unknown')
-                    st.session_state.address = f"GPS Location ({location_data['latitude']:.4f}, {location_data['longitude']:.4f}) ±{accuracy}m"
-                    st.session_state.location_detected = True
-                    st.balloons()  # Celebrate successful GPS detection!
-                    st.rerun()
-                elif location_data and "error" in location_data:
-                    st.error(f"🌍 Vercel geolocation failed: {location_data['error']}")
-                    st.warning("🔄 Trying IP-based geolocation as fallback...")
-                    ip_lat, ip_lon, ip_addr = get_user_location()
-                    if ip_lat is not None and ip_lon is not None:
-                        st.session_state.latitude = ip_lat
-                        st.session_state.longitude = ip_lon
-                        st.session_state.address = f"IP Location: {ip_addr}"
-                        st.session_state.location_detected = True
-                        st.info(f"\u2705 Fallback: Location detected by IP: {ip_addr}")
-                        st.rerun()
-                    else:
-                        st.error("❌ Unable to retrieve location. Please select on map.")
-                else:
-                    st.error("🌍 No response from Vercel geolocation service.")
-                    st.warning("🔄 Trying IP-based geolocation as fallback...")
-                    ip_lat, ip_lon, ip_addr = get_user_location()
-                    if ip_lat is not None and ip_lon is not None:
-                        st.session_state.latitude = ip_lat
-                        st.session_state.longitude = ip_lon
-                        st.session_state.address = f"IP Location: {ip_addr}"
-                        st.session_state.location_detected = True
-                        st.info(f"\u2705 Fallback: Location detected by IP: {ip_addr}")
-                        st.rerun()
-                    else:
-                        st.error("❌ Unable to retrieve location. Please select on map.")
+                        # No response from GPS service, try IP geolocation
+                        st.warning("🌍 No GPS response. Trying IP-based location...")
+                        self._try_ip_location()
         else:
-            st.success(f"\u2705 Location detected: {st.session_state.address}")
-            
-            # Add option to refresh location
+            # Location already detected, show it and offer refresh option
+            st.success(f"✅ Location detected: {st.session_state.address}")
             if st.button("🔄 Refresh Location"):
                 st.session_state.location_detected = False
                 st.rerun()
     
+    def _get_gps_location(self):
+        """
+        Get GPS location using a Vercel-hosted service.
+        
+        This uses JavaScript to communicate with an external service that
+        can access the browser's GPS location API.
+        """
+        # Increment counter for unique component keys
+        st.session_state.location_request_count = st.session_state.get('location_request_count', 0) + 1
+        
+        # Use JavaScript to get location from Vercel service
+        location_data = st_javascript("""
+            function() {
+                return new Promise((resolve) => {
+                    let resolved = false;
+                    
+                    // Create invisible iframe to load Vercel geolocation service
+                    const iframe = document.createElement('iframe');
+                    iframe.src = 'https://geolocation-page.vercel.app/';
+                    iframe.style.display = 'none';
+                    iframe.style.width = '1px';
+                    iframe.style.height = '1px';
+                    
+                    // Listen for location data from the iframe
+                    const messageHandler = (event) => {
+                        if (event.origin === 'https://geolocation-page.vercel.app' && !resolved) {
+                            resolved = true;
+                            window.removeEventListener('message', messageHandler);
+                            
+                            // Clean up iframe
+                            if (document.body.contains(iframe)) {
+                                document.body.removeChild(iframe);
+                            }
+                            
+                            resolve(event.data);
+                        }
+                    };
+                    
+                    // Set up message listener and add iframe to page
+                    window.addEventListener('message', messageHandler);
+                    document.body.appendChild(iframe);
+                    
+                    // Timeout after 25 seconds if no response
+                    setTimeout(() => {
+                        if (!resolved) {
+                            resolved = true;
+                            window.removeEventListener('message', messageHandler);
+                            
+                            if (document.body.contains(iframe)) {
+                                document.body.removeChild(iframe);
+                            }
+                            
+                            resolve({error: 'GPS location timeout'});
+                        }
+                    }, 25000);
+                });
+            }
+            """, key=f"location_request_{st.session_state.location_request_count}")
+        
+        return location_data
+    
+    def _set_location_from_gps(self, location_data):
+        """Set location from GPS data and update session state."""
+        st.success("🎯 GPS Location Successfully Detected!")
+        st.session_state.latitude = float(location_data["latitude"])
+        st.session_state.longitude = float(location_data["longitude"])
+        accuracy = location_data.get('accuracy', 'unknown')
+        st.session_state.address = f"GPS Location ({location_data['latitude']:.4f}, {location_data['longitude']:.4f}) ±{accuracy}m"
+        st.session_state.location_detected = True
+        st.balloons()  # Celebrate success!
+        st.rerun()
+    
+    def _try_ip_location(self):
+        """
+        Try IP-based geolocation as a fallback method.
+        This is less accurate than GPS but works when GPS is unavailable.
+        """
+        ip_lat, ip_lon, ip_addr = get_user_location()
+        if ip_lat is not None and ip_lon is not None:
+            st.session_state.latitude = ip_lat
+            st.session_state.longitude = ip_lon
+            st.session_state.address = f"IP Location: {ip_addr}"
+            st.session_state.location_detected = True
+            st.info(f"✅ Location detected by IP: {ip_addr}")
+            st.rerun()
+        else:
+            st.error("❌ Unable to detect location automatically. Please select your location on the map below.")
+            st.session_state.location_choice = "Select on map"
+            st.rerun()
+    
     def handle_map_selection(self):
-        """Handle manual location selection on map."""
+        """Handle manual location selection using an interactive map."""
         st.subheader("🗺️ Click on the map to set your location")
         
-        # Create map centered on current location or default
-        map_center_lat = st.session_state.get('latitude', 40.7128)  # Default to NYC
-        map_center_lon = st.session_state.get('longitude', -74.0060)
+        # Create map centered on current location or default (Hamburg)
+        map_center_lat = st.session_state.get('latitude', 53.462601)
+        map_center_lon = st.session_state.get('longitude', 9.969690)
         
+        # Create the map using Folium
         m = folium.Map(location=[map_center_lat, map_center_lon], zoom_start=5)
         
-        # Add marker if location is set and valid
+        # Add marker if location is already set and valid
         if (st.session_state.address not in ["Not set", "Automatic Detection Failed"] and 
             -90 <= st.session_state.latitude <= 90 and 
             -180 <= st.session_state.longitude <= 180):
@@ -277,11 +253,14 @@ class MeraiApp:
             ).add_to(m)
         
         # Display map and handle clicks
-        map_data = st_folium(m, height=400, use_container_width=True, key="folium_map_selector")
+        map_data = st_folium(m, height=400, use_container_width=True, key="map_selector")
         
+        # Check if user clicked on the map
         if map_data and map_data.get("last_clicked"):
             clicked_lat = map_data['last_clicked']['lat']
             clicked_lon = map_data['last_clicked']['lng']
+            
+            # Update location if user clicked on a different spot
             if (st.session_state.latitude != clicked_lat or 
                 st.session_state.longitude != clicked_lon):
                 st.session_state.latitude = clicked_lat
@@ -290,25 +269,28 @@ class MeraiApp:
                 st.rerun()
     
     def render_location_section(self):
-        """Render the location selection section."""
+        """Render the location selection section of the app."""
         st.header("📍 Location")
         
+        # Let user choose between automatic detection or manual selection
         location_option = st.radio(
-            "Choose location method:",
-            ("Detect my location", "Select location on map"),
+            "Choose how to set your location:",
+            ("Detect my location", "Select on map"),
             key='location_choice',
-            horizontal=True
+            horizontal=True,
+            help="GPS detection is more accurate but requires permission. Map selection always works."
         )
         
+        # Handle the selected option
         if st.session_state.location_choice == "Detect my location":
             self.handle_location_detection()
         else:
             self.handle_map_selection()
         
-        # Show current location if set
+        # Show current location information if available
         if st.session_state.address not in ["Not set", "Automatic Detection Failed"]:
             if "GPS Location" in st.session_state.address:
-                st.success(f"🎯 **Precise GPS Location Detected**")
+                st.success("🎯 **Precise GPS Location Detected**")
                 col1, col2 = st.columns(2)
                 with col1:
                     st.metric("📍 Latitude", f"{st.session_state.latitude:.6f}")
@@ -325,19 +307,28 @@ class MeraiApp:
         """Render the date and time selection section."""
         st.header("🕒 Date and Time")
         
+        # Create two columns for date and time inputs
         col1, col2 = st.columns(2)
         with col1:
-            st.date_input("📅 Date", key="user_selected_date")
+            st.date_input(
+                "📅 Date", 
+                key="user_selected_date",
+                help="Select the date you want to observe the sky"
+            )
         with col2:
-            st.time_input("⏰ Time", key="user_selected_time")
+            st.time_input(
+                "⏰ Time", 
+                key="user_selected_time",
+                help="Select the time you want to observe the sky (in your local time)"
+            )
         
-        # Create combined datetime
+        # Combine date and time into a single datetime object
         combined_dt = datetime.combine(
             st.session_state.user_selected_date, 
             st.session_state.user_selected_time
         ).replace(tzinfo=utc)
         
-        # Show formatted datetime
+        # Show the formatted datetime to the user
         st.info(f"🗓️ Observing time: {combined_dt.strftime('%B %d, %Y at %H:%M UTC')}")
         
         return combined_dt
@@ -346,28 +337,34 @@ class MeraiApp:
         """
         Enhance astronomical objects with additional information from Wikipedia.
         
+        This function takes the basic astronomical data and adds:
+        - Detailed descriptions from Wikipedia
+        - Constellation information for stars
+        - Better names extracted from descriptions
+        
         Args:
             visible_objects (list): List of basic astronomical objects
             
         Returns:
-            list: Enhanced objects with descriptions and constellation info
+            list: Enhanced objects with additional information
         """
         enhanced_objects = []
         
         for obj in visible_objects:
-            # Get description for the object
+            # Get Wikipedia description for the object
             hip_id = obj.get('hip_id')
+            # For stars, use HIP ID if available, otherwise use name
             description_lookup_key = hip_id if obj['type'] == 'Star' and hip_id else obj['name']
             description = get_object_description(description_lookup_key)
 
-            # Extract better name from description for stars
+            # Try to extract a better name from the description for stars
             name_from_desc = None
-            if obj['type'] == 'Star':
-                name_from_desc = extract_name_from_description(description) if description else None
+            if obj['type'] == 'Star' and description:
+                name_from_desc = extract_name_from_description(description)
                 if name_from_desc:
                     obj['name'] = name_from_desc
 
-            # Add enhanced information
+            # Add the enhanced information to the object
             obj['fetched_description'] = description
             obj['name_extracted_from_description_for_tile_h1'] = name_from_desc
 
@@ -385,48 +382,67 @@ class MeraiApp:
         
         return enhanced_objects
     
-    @staticmethod
-    def create_object_tile_html(name_h1, name_h2, obj_data, constellation, description, image_url):
+    def get_object_emoji(self, obj_type):
+        """Get the appropriate emoji for each type of astronomical object."""
+        emoji_map = {
+            "Star": "⭐", 
+            "Planet": "🪐", 
+            "Sun": "☀️", 
+            "Moon": "🌙"
+        }
+        return emoji_map.get(obj_type, "🌌")
+    
+    def create_object_tile(self, obj_data):
         """
-        Create object tile using minimal HTML to avoid rendering issues.
+        Create a beautiful tile to display information about an astronomical object.
         
         Args:
-            name_h1 (str): Primary name for display
-            name_h2 (str): Secondary name (HIP ID for stars)
-            obj_data (dict): Object data dictionary
-            constellation (str): Constellation name
-            description (str): Object description
-            image_url (str): URL of object image
+            obj_data (dict): Dictionary containing all object information
         """
-        # Get object emoji
-        type_emoji = MeraiApp._get_object_emoji(obj_data['type'])
+        # Get display information
+        display_name = (obj_data['name_extracted_from_description_for_tile_h1'] 
+                       if obj_data['name_extracted_from_description_for_tile_h1'] 
+                       else obj_data['name'])
+        secondary_name = obj_data.get('hip_id', '') if obj_data['type'] == 'Star' else ''
+        description = obj_data['fetched_description']
+        constellation = obj_data.get('constellation', "N/A")
         
-        # Create a simple container
+        # Get emoji and image
+        type_emoji = self.get_object_emoji(obj_data['type'])
+        image_url = get_object_image_url(obj_data['name'])
+        
+        # Create tile with custom styling
         with st.container():
-            # Add basic styling
             st.markdown("""
-            <div style="border: 2px solid #ffd700; border-radius: 15px; padding: 15px; margin: 10px 0; background: linear-gradient(135deg, #232526 0%, #414345 100%); box-shadow: 0 4px 15px rgba(0,0,0,0.5);">
+            <div style="border: 2px solid #ffd700; border-radius: 15px; padding: 15px; margin: 10px 0; 
+                        background: linear-gradient(135deg, #232526 0%, #414345 100%); 
+                        box-shadow: 0 4px 15px rgba(0,0,0,0.5);">
             """, unsafe_allow_html=True)
             
-            st.markdown(f"### {type_emoji} {name_h1}")
-            if name_h2:
-                st.markdown(f"**{name_h2}**")
+            # Object name and type
+            st.markdown(f"### {type_emoji} {display_name}")
+            if secondary_name:
+                st.markdown(f"**{secondary_name}**")
 
+            # Create two columns for image and info
             col1, col2 = st.columns([1, 2])
 
             with col1:
+                # Show image if available, otherwise show emoji
                 if image_url and image_url.startswith(('http://', 'https://')):
-                    st.image(image_url, caption=name_h1, use_container_width=True)
+                    st.image(image_url, caption=display_name, use_container_width=True)
                 else:
-                    st.markdown(f"<div style='text-align: center; font-size: 5rem;'>{type_emoji}</div>", unsafe_allow_html=True)
+                    st.markdown(f"<div style='text-align: center; font-size: 5rem;'>{type_emoji}</div>", 
+                              unsafe_allow_html=True)
 
             with col2:
+                # Show astronomical information
                 st.write(f"**🌙 Type:** {obj_data['type']}")
                 st.write(f"**🔺 Altitude:** {obj_data['altitude']:.2f}°")
                 st.write(f"**🧭 Azimuth:** {obj_data['azimuth']:.2f}°")
                 st.write(f"**✨ Constellation:** {constellation}")
             
-            # Description
+            # Show description (truncated if too long)
             if description and description != "Description not available.":
                 desc_content = (description[:MAX_DESC_LEN] + "..." 
                                if len(description) > MAX_DESC_LEN 
@@ -440,14 +456,9 @@ class MeraiApp:
                 with st.expander("📖 Read full description"):
                     st.write(description)
     
-    @staticmethod
-    def _get_object_emoji(obj_type):
-        """Get appropriate emoji for object type."""
-        return {"Star": "⭐", "Planet": "🪐", "Sun": "☀️", "Moon": "🌙"}.get(obj_type, "🌌")
-    
     def create_object_tiles(self, objects):
         """
-        Create beautiful tiles to display astronomical objects.
+        Create tiles for all visible astronomical objects.
         
         Args:
             objects (list): List of enhanced astronomical objects
@@ -457,32 +468,17 @@ class MeraiApp:
             st.markdown("💡 **Tip:** Try adjusting the time or location to see different objects.")
             return
         
-        # Sort objects by type and altitude (highest first)
+        # Sort objects by type and altitude (highest first for better visibility)
         sorted_objects = sorted(objects, key=lambda x: (x['type'], -x['altitude']))
         
-        # Display count
+        # Show count of visible objects
         st.metric("🌟 Visible Objects", len(objects))
         
-        # Create tiles in columns
+        # Create tiles in 3 columns
         cols = st.columns(3)
         for idx, obj_data in enumerate(sorted_objects):
             with cols[idx % 3]:
-                # Extract display information
-                display_name_h1 = (obj_data['name_extracted_from_description_for_tile_h1'] 
-                                  if obj_data['name_extracted_from_description_for_tile_h1'] 
-                                  else obj_data['name'])
-                display_name_h2 = obj_data.get('hip_id', '') if obj_data['type'] == 'Star' else ''
-                description = obj_data['fetched_description']
-                constellation = obj_data.get('constellation', "N/A")
-
-                # Get image
-                image_url = get_object_image_url(obj_data['name'])
-                
-                # Create tile HTML
-                self.create_object_tile_html(
-                    display_name_h1, display_name_h2, obj_data, 
-                    constellation, description, image_url
-                )
+                self.create_object_tile(obj_data)
     
     def render_sky_chart_section(self, visible_objects, dt):
         """
@@ -494,7 +490,7 @@ class MeraiApp:
         """
         st.header("🌟 Interactive Sky Chart")
         
-        # Zoom controls
+        # Create zoom controls
         col1, col2, col3 = st.columns([1, 2, 1])
         
         with col1:
@@ -516,44 +512,44 @@ class MeraiApp:
         
         # Generate and display sky chart
         if visible_objects:
-            chart_lat = st.session_state.get('latitude', 0.0)
-            chart_lon = st.session_state.get('longitude', 0.0)
-            
             with st.spinner("🌌 Generating sky chart..."):
                 try:
                     sky_chart_figure = create_sky_chart(
-                        visible_objects, chart_lat, chart_lon, dt, 
+                        visible_objects, 
+                        st.session_state.latitude, 
+                        st.session_state.longitude, 
+                        dt, 
                         zoom=st.session_state.sky_zoom
                     )
                     
                     if sky_chart_figure:
-                        st.plotly_chart(sky_chart_figure, use_container_width=True, config={'displayModeBar': False})
-                        st.info("💡 **Tip:** The sky chart shows the current view from your location. Higher altitude objects are more prominent.")
+                        st.plotly_chart(sky_chart_figure, use_container_width=True, 
+                                      config={'displayModeBar': False})
+                        st.info("💡 **Tip:** The sky chart shows the current view from your location. "
+                               "Higher altitude objects are more prominent in the sky.")
                     else:
                         st.warning("⚠️ Could not generate the sky chart at this time.")
                         
                 except Exception as e:
                     st.error(f"❌ Error generating sky chart: {str(e)}")
 
-            # --- Sky Atlas Integration ---
+            # Add online sky atlas
             st.markdown("---")
-            st.subheader("🛰️ Interactive Sky Atlas")
-            st.markdown("*Explore the night sky with the full Aladin Lite web viewer below*")
+            st.subheader("🛰️ Online Sky Atlas")
+            st.markdown("*Explore the night sky with the interactive Aladin Lite viewer below*")
 
+            # Embed Aladin Lite sky atlas
             import streamlit.components.v1 as components
             components.html(
-                """
-                <iframe src=\"https://aladin.u-strasbg.fr/AladinLite/\" width=\"100%\" height=\"600\" style=\"border:none;\"></iframe>
-                """,
+                '<iframe src="https://aladin.u-strasbg.fr/AladinLite/" width="100%" height="600" style="border:none;"></iframe>',
                 height=600
             )
-            # --- End of Sky Atlas Integration ---
         else:
             st.info("ℹ️ No objects visible to display on sky chart.")
     
     def run(self):
         """Run the main application."""
-        # Main title and description - centered
+        # App title and description
         st.markdown(
             """
             <h1 style='text-align: center; color: #ffd700; margin-bottom: 0.5rem;'>
@@ -581,9 +577,11 @@ class MeraiApp:
         
         # Fetch and display astronomical objects
         st.header("🌌 Visible Astronomical Objects")
+        st.markdown("*Objects visible from your location at the selected time*")
         
         with st.spinner("🔍 Scanning the cosmos for visible objects..."):
             try:
+                # Get visible objects using astronomical calculations
                 visible_objects = get_visible_objects(
                     st.session_state.latitude, 
                     st.session_state.longitude, 
@@ -595,7 +593,7 @@ class MeraiApp:
                     st.info("💡 Try adjusting the time or location to see different objects.")
                     st.stop()
                 
-                # Enhance objects with additional information
+                # Enhance objects with Wikipedia information
                 enhanced_objects = self.enhance_visible_objects(visible_objects)
                 
                 # Display object tiles
@@ -612,13 +610,25 @@ class MeraiApp:
         # Footer
         st.markdown("---")
         st.markdown(
-            "🔭 **Merai - A Space Detective** | Built with ❤️ using Streamlit and Skyfield | "
-            "Data from NASA JPL, Hipparcos, Aladin and Wikipedia"
+            """
+            <div style='text-align: center; color: #888; font-size: 0.9rem;'>
+                🔭 <strong>Merai - A Space Detective</strong> | 
+                Built with ❤️ using Streamlit and Skyfield | 
+                Data from NASA JPL, Hipparcos, and Wikipedia<br>
+                <em>Educational tool for learning astronomy and web development</em>
+            </div>
+            """,
+            unsafe_allow_html=True
         )
 
 
 def main():
-    """Entry point for the application."""
+    """
+    Entry point for the application.
+    
+    This function creates and runs the Merai app, with error handling
+    to provide a good user experience even if something goes wrong.
+    """
     try:
         app = MeraiApp()
         app.run()

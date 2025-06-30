@@ -1,32 +1,33 @@
 """
 Location utility functions for the Merai Space Detective application.
 
-Simple, reliable location detection using IP-based geolocation (ipapi.co).
+This module provides functions to detect user location and handle datetime operations.
 """
 
+import geocoder
+from skyfield.api import utc
+from datetime import datetime
 import requests
 
 def get_user_location():
     """
-    Detect user's location using ipapi.co (IP-based geolocation).
+    Detect user's location using IP-based geolocation.
     Returns:
-        tuple: (latitude, longitude, address) or (None, None, None) if not available
+        tuple: (latitude, longitude, address) if successful, (None, None, None) if failed
     """
-    try:
-        response = requests.get('https://ipapi.co/json/', timeout=8)
-        if response.status_code == 200:
-            data = response.json()
-            if 'latitude' in data and 'longitude' in data:
-                lat = float(data['latitude'])
-                lon = float(data['longitude'])
-                city = data.get('city', '')
-                region = data.get('region', '')
-                country = data.get('country_name', '')
-                address_parts = [part for part in [city, region, country] if part]
-                address = ', '.join(address_parts) if address_parts else "IP-based Location"
-                return lat, lon, address
-    except Exception:
-        pass
-    return None, None, None
+    g = geocoder.ip('me')
+    if g.ok:
+        lat, lon = g.latlng
+        address = g.city + ", " + g.country if g.city and g.country else "Unknown location"
+        return lat, lon, address
+    else:
+        return None, None, None
 
-
+def get_user_datetime():
+    """
+    Get current datetime with UTC timezone.
+    
+    Returns:
+        datetime: Current datetime with UTC timezone
+    """
+    return datetime.now().replace(tzinfo=utc)
