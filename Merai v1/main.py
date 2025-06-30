@@ -107,65 +107,47 @@ class MeraiApp:
                 st.session_state[key] = default_value
     
     def handle_location_detection(self):
-        """Handle automatic location detection with browser geolocation (iframe) and fallback to IP-based."""
-        import streamlit.components.v1 as components
+        """Handle automatic location detection using ONLY browser geolocation (no IP fallback)."""
         from streamlit_javascript import st_javascript
 
         if "location_detected" not in st.session_state:
             st.session_state.location_detected = False
 
-        # Only show the button if not detected yet
         if not st.session_state.location_detected:
             if st.button("\U0001F30D Detect My Location Now", type="primary"):
-                with st.spinner("\U0001F50D Detecting your location..."):
-                    # Embed the geolocate.html iframe (hidden)
-                    components.html(
-                        f"""
-                        <iframe src='/static/geolocate.html' width='0' height='0' id='geo-iframe'></iframe>
-                        <script>
-                        window.addEventListener("message", (event) => {{
-                            window.parent.postMessage(event.data, "*");
-                        }}, false);
-                        </script>
-                        """,
-                        height=0
-                    )
-                    # Listen for the geolocation result
-                    location_data = st_javascript("""
+                with st.spinner("\U0001F50D Detecting your location (browser)..."):
+                    # Use streamlit_javascript to get browser geolocation
+                    location = st_javascript("""
                     async () => {
-                      return await new Promise(resolve => {
-                        window.addEventListener("message", (event) => {
-                          resolve(event.data);
-                        }, { once: true });
-                        setTimeout(() => resolve(null), 5000);
-                      });
+                        return await new Promise((resolve, reject) => {
+                            if (navigator.geolocation) {
+                                navigator.geolocation.getCurrentPosition(
+                                    (pos) => {
+                                        resolve({
+                                            lat: pos.coords.latitude,
+                                            lon: pos.coords.longitude
+                                        });
+                                    },
+                                    (err) => {
+                                        resolve({error: err.message});
+                                    }
+                                );
+                            } else {
+                                resolve({error: 'Geolocation not supported'});
+                            }
+                        });
                     }
                     """)
-                    import json
-                    try:
-                        loc = json.loads(location_data) if location_data else None
-                    except Exception:
-                        loc = None
-                    if loc and 'lat' in loc and 'lon' in loc:
-                        st.session_state.latitude = float(loc['lat'])
-                        st.session_state.longitude = float(loc['lon'])
-                        st.session_state.address = "Browser Geolocation"
+                    if location and isinstance(location, dict) and 'lat' in location and 'lon' in location:
+                        st.session_state.latitude = float(location['lat'])
+                        st.session_state.longitude = float(location['lon'])
+                        st.session_state.address = f"Browser Geolocation ({location['lat']:.4f}, {location['lon']:.4f})"
                         st.session_state.location_detected = True
-                        st.success(f"\u2705 Location detected: Browser Geolocation ({loc['lat']:.4f}, {loc['lon']:.4f})")
+                        st.success(f"\u2705 Location detected: {st.session_state.address}")
                         st.rerun()
-                    else:
-                        # Fallback to IP-based geolocation
-                        detected_lat, detected_lon, detected_address = get_user_location()
-                        if detected_lat is not None and detected_lon is not None:
-                            st.session_state.latitude = detected_lat
-                            st.session_state.longitude = detected_lon
-                            st.session_state.address = detected_address
-                            st.session_state.location_detected = True
-                            st.success(f"\u2705 Location detected: {detected_address}")
-                            st.rerun()
-                        else:
-                            st.error("\u274C Could not detect your location. Please check your browser permissions or try again.")
-                            st.session_state.address = "Automatic Detection Failed"
+                    elif location and isinstance(location, dict) and 'error' in location:
+                        st.error(f"\u274C Could not detect your location: {location['error']}")
+                        st.session_state.address = "Automatic Detection Failed"
         else:
             st.success(f"\u2705 Location detected: {st.session_state.address}")
     
