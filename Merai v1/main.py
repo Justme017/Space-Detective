@@ -124,8 +124,6 @@ class MeraiApp:
                     st.session_state.address = f"User Location ({loc['latitude']:.4f}, {loc['longitude']:.4f})"
                     st.session_state.location_detected = True
                     st.success(f"\u2705 Location detected: {st.session_state.address}")
-                    st.write(f"Latitude: {loc['latitude']:.6f}")
-                    st.write(f"Longitude: {loc['longitude']:.6f}")
                     st.rerun()
                 else:
                     st.warning("Unable to retrieve location from browser. Trying IP-based geolocation...")
@@ -136,15 +134,11 @@ class MeraiApp:
                         st.session_state.address = ip_addr
                         st.session_state.location_detected = True
                         st.success(f"\u2705 Location detected by IP: {ip_addr}")
-                        st.write(f"Latitude: {ip_lat:.6f}")
-                        st.write(f"Longitude: {ip_lon:.6f}")
                         st.rerun()
                     else:
                         st.error("Unable to retrieve location. Please allow location access or select on map.")
         else:
             st.success(f"\u2705 Location detected: {st.session_state.address}")
-            st.write(f"Latitude: {st.session_state.latitude:.6f}")
-            st.write(f"Longitude: {st.session_state.longitude:.6f}")
     
     def handle_map_selection(self):
         """Handle manual location selection on map."""
