@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GPS Location Service</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .container {
+            text-align: center;
+            max-width: 500px;
+            padding: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        
+        .status {
+            font-size: 1.2em;
+            margin: 20px 0;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .success {
+            color: #4CAF50;
+        }
+        
+        .error {
+            color: #f44336;
+        }
+        
+        .retry-btn {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            margin-top: 15px;
+        }
+        
+        .retry-btn:hover {
+            background: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌍 GPS Location Service</h1>
+        <div id="status" class="status">
+            <div class="loading"></div>
+            Requesting your location...
+        </div>
+        <div id="details"></div>
+        <button id="retryBtn" class="retry-btn" style="display: none;" onclick="requestLocation()">
+            🔄 Try Again
+        </button>
+    </div>
+
+    <script>
+        let locationRequested = false;
+        
+        function updateStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            const detailsDiv = document.getElementById('details');
+            
+            if (type === 'loading') {
+                statusDiv.innerHTML = `<div class="loading"></div> ${message}`;
+            } else if (type === 'success') {
+                statusDiv.innerHTML = `✅ ${message}`;
+                statusDiv.className = 'status success';
+            } else if (type === 'error') {
+                statusDiv.innerHTML = `❌ ${message}`;
+                statusDiv.className = 'status error';
+                document.getElementById('retryBtn').style.display = 'inline-block';
+            } else {
+                statusDiv.innerHTML = message;
+            }
+        }
+        
+        function sendLocationToParent(data) {
+            // Send location data to parent window via postMessage
+            if (window.parent && window.parent !== window) {
+                console.log('📤 Sending location data to parent:', data);
+                window.parent.postMessage(data, '*');
+            } else {
+                console.log('📍 Location data (for standalone testing):', data);
+            }
+        }
+        
+        function requestLocation() {
+            if (locationRequested) {
+                console.log('⚠️ Location already requested, skipping...');
+                return;
+            }
+            
+            locationRequested = true;
+            document.getElementById('retryBtn').style.display = 'none';
+            
+            updateStatus('Checking GPS availability...', 'loading');
+            
+            // Check if geolocation is supported
+            if (!navigator.geolocation) {
+                const errorData = {
+                    error: 'Geolocation not supported by this browser',
+                    timestamp: new Date().toISOString()
+                };
+                updateStatus('GPS not supported by your browser', 'error');
+                sendLocationToParent(errorData);
+                return;
+            }
+            
+            updateStatus('Requesting GPS permission...', 'loading');
+            document.getElementById('details').innerHTML = 
+                '<small>Please allow location access when prompted by your browser</small>';
+            
+            // Set up geolocation options
+            const options = {
+                enableHighAccuracy: true,  // Use GPS if available
+                timeout: 20000,           // 20 second timeout
+                maximumAge: 300000        // Accept location up to 5 minutes old
+            };
+            
+            // Request location
+            navigator.geolocation.getCurrentPosition(
+                // Success callback
+                function(position) {
+                    const locationData = {
+                        latitude: position.coords.latitude,
+                        longitude: position.coords.longitude,
+                        accuracy: Math.round(position.coords.accuracy),
+                        timestamp: new Date().toISOString(),
+                        altitude: position.coords.altitude,
+                        heading: position.coords.heading,
+                        speed: position.coords.speed
+                    };
+                    
+                    console.log('✅ GPS location obtained:', locationData);
+                    
+                    updateStatus('Location obtained successfully!', 'success');
+                    document.getElementById('details').innerHTML = `
+                        <small>
+                            📍 Lat: ${locationData.latitude.toFixed(6)}<br>
+                            📍 Lon: ${locationData.longitude.toFixed(6)}<br>
+                            🎯 Accuracy: ±${locationData.accuracy}m
+                        </small>
+                    `;
+                    
+                    // Send location data to parent
+                    sendLocationToParent(locationData);
+                },
+                
+                // Error callback
+                function(error) {
+                    let errorMessage = 'Unknown location error';
+                    let userFriendlyMessage = 'Could not get your location';
+                    
+                    switch(error.code) {
+                        case error.PERMISSION_DENIED:
+                            errorMessage = 'Location access denied by user';
+                            userFriendlyMessage = 'Location access denied. Please allow location access and try again.';
+                            break;
+                        case error.POSITION_UNAVAILABLE:
+                            errorMessage = 'Location information unavailable';
+                            userFriendlyMessage = 'Location information unavailable. Check GPS/WiFi settings.';
+                            break;
+                        case error.TIMEOUT:
+                            errorMessage = 'Location request timeout';
+                            userFriendlyMessage = 'Location request timed out. Please try again.';
+                            break;
+                    }
+                    
+                    console.log('❌ Geolocation error:', errorMessage);
+                    
+                    const errorData = {
+                        error: errorMessage,
+                        code: error.code,
+                        timestamp: new Date().toISOString()
+                    };
+                    
+                    updateStatus(userFriendlyMessage, 'error');
+                    document.getElementById('details').innerHTML = 
+                        `<small>Error code: ${error.code}</small>`;
+                    
+                    // Send error data to parent
+                    sendLocationToParent(errorData);
+                    
+                    // Reset flag to allow retry
+                    locationRequested = false;
+                },
+                
+                // Options
+                options
+            );
+        }
+        
+        // Auto-start location request when page loads
+        window.addEventListener('load', function() {
+            console.log('🚀 GPS Location Service starting...');
+            // Small delay to ensure iframe is fully loaded
+            setTimeout(requestLocation, 1000);
+        });
+        
+        // Also handle postMessage requests from parent
+        window.addEventListener('message', function(event) {
+            console.log('📨 Received message from parent:', event.data);
+            if (event.data === 'requestLocation') {
+                locationRequested = false; // Reset flag
+                requestLocation();
+            }
+        });
+        
+        // Handle page visibility change (for mobile browsers)
+        document.addEventListener('visibilitychange', function() {
+            if (!document.hidden && !locationRequested) {
+                console.log('📱 Page became visible, requesting location...');
+                setTimeout(requestLocation, 500);
+            }
+        });
+    </script>
+</body>
+</html>

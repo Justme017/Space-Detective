@@ -159,7 +159,7 @@ class MeraiApp:
                     
                     // Create invisible iframe to load Vercel geolocation service
                     const iframe = document.createElement('iframe');
-                    iframe.src = 'https://geolocation-page.vercel.app/';
+                    iframe.src = 'https://geolocation-page.vercel.app';
                     iframe.style.display = 'none';
                     iframe.style.width = '1px';
                     iframe.style.height = '1px';
