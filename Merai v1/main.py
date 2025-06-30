@@ -21,6 +21,7 @@ import streamlit as st
 from datetime import date, datetime
 from skyfield.api import utc
 from streamlit_folium import st_folium
+from streamlit_javascript import st_javascript
 import folium
 
 # Import custom modules
@@ -117,25 +118,33 @@ class MeraiApp:
 
         if not st.session_state.location_detected:
             if st.button("\U0001F30D Detect My Location Now", type="primary"):
-                # Embed the geolocate.html iframe
-                components.html("""
-                <iframe src="/static/geolocate.html" width="0" height="0" style="border:none;"></iframe>
-                <script>
-                window.addEventListener("message", function(event) {
-                    window.parent.postMessage(event.data, "*");
-                }, false);
-                </script>
-                """, height=0)
+                # Use your deployed Vercel URL here
+                GEOLOCATION_SERVICE_URL = "https://your-app-name.vercel.app"  # Replace with your actual Vercel URL
                 
-                # Listen for the message
-                location_data = st_javascript("""
-                new Promise((resolve) => {
-                    window.addEventListener("message", function(event) {
-                        resolve(event.data);
-                    }, {once: true});
-                    setTimeout(() => resolve(null), 5000);
-                })
-                """)
+                # Embed the geolocation iframe and listen for the result
+                location_data = st_javascript(f"""
+                new Promise((resolve) => {{
+                    const iframe = document.createElement('iframe');
+                    iframe.src = '{GEOLOCATION_SERVICE_URL}';
+                    iframe.style.width = '0px';
+                    iframe.style.height = '0px';
+                    iframe.style.border = 'none';
+                    iframe.style.display = 'none';
+                    
+                    window.addEventListener('message', function(event) {{
+                        if (event.origin === '{GEOLOCATION_SERVICE_URL}') {{
+                            resolve(event.data);
+                        }}
+                    }}, {{once: true}});
+                    
+                    document.body.appendChild(iframe);
+                    
+                    // Timeout after 10 seconds
+                    setTimeout(() => {{
+                        resolve(null);
+                    }}, 10000);
+                }})
+                """, key="geolocation_request")
                 
                 if location_data and "latitude" in location_data and "longitude" in location_data:
                     st.session_state.latitude = float(location_data["latitude"])
