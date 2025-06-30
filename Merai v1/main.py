@@ -123,6 +123,11 @@ class MeraiApp:
                     
                     location_data = self._get_gps_location()
                     
+                    # Debug: Show what we received
+                    st.write("🔍 **Debug Info:**")
+                    st.write("Data type:", type(location_data))
+                    st.write("Data content:", location_data)
+                    
                     if location_data and "latitude" in location_data and "longitude" in location_data:
                         # SUCCESS! GPS location detected
                         st.success("🎯 Excellent! GPS location detected with high accuracy!")
