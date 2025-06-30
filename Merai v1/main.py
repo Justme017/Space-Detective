@@ -119,20 +119,20 @@ class MeraiApp:
         if not st.session_state.location_detected:
             if st.button("\U0001F30D Detect My Location Now", type="primary"):
                 # Use your deployed Vercel URL here
-                GEOLOCATION_SERVICE_URL = "https://your-app-name.vercel.app"  # Replace with your actual Vercel URL
+                GEOLOCATION_SERVICE_URL = "https://geolocation-page.vercel.app"
                 
                 # Embed the geolocation iframe and listen for the result
                 location_data = st_javascript(f"""
                 new Promise((resolve) => {{
                     const iframe = document.createElement('iframe');
-                    iframe.src = '{GEOLOCATION_SERVICE_URL}';
+                    iframe.src = 'https://geolocation-page.vercel.app';
                     iframe.style.width = '0px';
                     iframe.style.height = '0px';
                     iframe.style.border = 'none';
                     iframe.style.display = 'none';
                     
                     window.addEventListener('message', function(event) {{
-                        if (event.origin === '{GEOLOCATION_SERVICE_URL}') {{
+                        if (event.origin === 'https://geolocation-page.vercel.app') {{
                             resolve(event.data);
                         }}
                     }}, {{once: true}});
