@@ -1,0 +1,23 @@
+{
+    "_info": {
+        "description": "API Configuration for Merai Space Detective",
+        "instructions": "Replace 'your_api_key_here' with actual API keys",
+        "created_by": "Merai Space Detective v1.0"
+    },
+    "geocoding": {
+        "service": "ipstack",
+        "api_key": "your_ipstack_api_key_here",
+        "fallback_service": "ip-api",
+        "note": "Currently using free geocoder service. Add API key for premium features."
+    },
+    "wikipedia": {
+        "api_url": "https://en.wikipedia.org/api/rest_v1/page/summary/",
+        "note": "Wikipedia API is free and doesn't require authentication"
+    },
+    "future_apis": {
+        "astronomy_api": "your_astronomy_api_key_here",
+        "weather_api": "your_weather_api_key_here",
+        "nasa_api": "your_nasa_api_key_here",
+        "note": "Placeholder for future API integrations"
+    }
+}
