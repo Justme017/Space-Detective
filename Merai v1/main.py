@@ -107,33 +107,67 @@ class MeraiApp:
     
     def handle_location_detection(self):
         """
-        Handle automatic location detection using browser GPS or IP geolocation.
+        Handle automatic location detection with priority on Vercel GPS service.
         
-        This method tries multiple approaches for the best user experience:
-        1. Browser GPS through a Vercel-hosted service (most accurate)
-        2. IP-based geolocation (fallback, less accurate)
-        3. Manual map selection (if both automatic methods fail)
+        This method prioritizes GPS accuracy:
+        1. Browser GPS through Vercel-hosted service (PRIMARY - most accurate)
+        2. Extended wait time for GPS response
+        3. IP-based geolocation only as final fallback
+        4. Manual map selection if everything fails
         """
         if not st.session_state.location_detected:
             if st.button("🌍 Detect My Location", type="primary"):
-                with st.spinner("🔍 Getting your location..."):
-                    # Try GPS location first
-                    st.info("📡 Attempting GPS location detection...")
+                with st.spinner("🔍 Getting your precise GPS location..."):
+                    # Primary attempt: GPS location via Vercel
+                    st.info("�️ Requesting GPS location from your device...")
+                    st.info("💡 Please allow location access when prompted for best accuracy")
+                    
                     location_data = self._get_gps_location()
                     
                     if location_data and "latitude" in location_data and "longitude" in location_data:
-                        # Success! GPS location detected
+                        # SUCCESS! GPS location detected
+                        st.success("🎯 Excellent! GPS location detected with high accuracy!")
                         self._set_location_from_gps(location_data)
                         
                     elif location_data and "error" in location_data:
-                        # GPS failed, try IP geolocation
-                        st.warning("🌍 GPS unavailable. Trying IP-based location...")
-                        self._try_ip_location()
+                        # GPS explicitly failed (user denied, not supported, etc.)
+                        error_msg = location_data.get("error", "Unknown GPS error")
+                        st.warning(f"🌍 GPS Error: {error_msg}")
+                        
+                        # Show user-friendly message and offer alternatives
+                        if "denied" in error_msg.lower() or "permission" in error_msg.lower():
+                            st.info("💡 **To enable GPS:** Refresh the page and click 'Allow' when prompted")
+                            st.info("📍 **Alternative:** Use the map selection below or try again")
+                            
+                            # Give user choice instead of auto-fallback
+                            col1, col2 = st.columns(2)
+                            with col1:
+                                if st.button("🔄 Try GPS Again"):
+                                    st.rerun()
+                            with col2:
+                                if st.button("📍 Use Approximate Location"):
+                                    self._try_ip_location()
+                        else:
+                            # For other GPS errors, offer IP fallback
+                            if st.button("📍 Use Approximate Location (Less Accurate)"):
+                                self._try_ip_location()
                         
                     else:
-                        # No response from GPS service, try IP geolocation
-                        st.warning("🌍 No GPS response. Trying IP-based location...")
-                        self._try_ip_location()
+                        # No response from GPS service (timeout or service issue)
+                        st.warning("🌍 GPS service taking longer than expected...")
+                        st.info("🔧 This might be due to:")
+                        st.info("   • Slow internet connection")
+                        st.info("   • Browser security settings")
+                        st.info("   • Service temporarily unavailable")
+                        
+                        # Give user options instead of immediate fallback
+                        col1, col2 = st.columns(2)
+                        with col1:
+                            if st.button("🔄 Try GPS Again"):
+                                st.rerun()
+                        with col2:
+                            if st.button("📍 Use Approximate Location"):
+                                self._try_ip_location()
         else:
             # Location already detected, show it and offer refresh option
             st.success(f"✅ Location detected: {st.session_state.address}")
@@ -143,19 +177,24 @@ class MeraiApp:
     
     def _get_gps_location(self):
         """
-        Get GPS location using a Vercel-hosted service.
+        Get GPS location using Vercel-hosted service with extended timeout.
         
-        This uses JavaScript to communicate with an external service that
-        can access the browser's GPS location API.
+        This method prioritizes GPS accuracy by:
+        - Using longer timeout (45 seconds instead of 25)
+        - Better error handling and user feedback
+        - More detailed logging for debugging
         """
         # Increment counter for unique component keys
         st.session_state.location_request_count = st.session_state.get('location_request_count', 0) + 1
         
-        # Use JavaScript to get location from Vercel service
+        # Use JavaScript to get location from Vercel service with extended patience
         location_data = st_javascript("""
             function() {
                 return new Promise((resolve) => {
                     let resolved = false;
+                    let messageCount = 0;
+                    
+                    console.log('🛰️ Starting HIGH-PRIORITY GPS location request via Vercel...');
                     
                     // Create invisible iframe to load Vercel geolocation service
                     const iframe = document.createElement('iframe');
@@ -166,7 +205,12 @@ class MeraiApp:
                     
                     // Listen for location data from the iframe
                     const messageHandler = (event) => {
+                        messageCount++;
+                        console.log(`📨 GPS Message ${messageCount} from:`, event.origin);
+                        console.log('📍 GPS Data received:', event.data);
+                        
                         if (event.origin === 'https://geolocation-page.vercel.app' && !resolved) {
+                            console.log('✅ VALID GPS message from Vercel service!');
                             resolved = true;
                             window.removeEventListener('message', messageHandler);
                             
@@ -176,16 +220,20 @@ class MeraiApp:
                             }
                             
                             resolve(event.data);
+                        } else if (!resolved) {
+                            console.log('⚠️ GPS message from unknown origin:', event.origin);
                         }
                     };
                     
                     // Set up message listener and add iframe to page
                     window.addEventListener('message', messageHandler);
                     document.body.appendChild(iframe);
+                    console.log('📱 GPS iframe loaded, waiting for location response...');
                     
-                    // Timeout after 25 seconds if no response
+                    // EXTENDED timeout - give GPS more time to work (45 seconds)
                     setTimeout(() => {
                         if (!resolved) {
+                            console.log(`⏰ GPS timeout after 45 seconds. Messages received: ${messageCount}`);
                             resolved = true;
                             window.removeEventListener('message', messageHandler);
                             
@@ -193,12 +241,19 @@ class MeraiApp:
                                 document.body.removeChild(iframe);
                             }
                             
-                            resolve({error: 'GPS location timeout'});
+                            resolve({
+                                error: 'GPS location timeout - service may be slow or unavailable',
+                                debug: {
+                                    messagesReceived: messageCount,
+                                    timeoutAfter: '45 seconds',
+                                    service: 'Vercel GPS'
+                                }
+                            });
                         }
-                    }, 25000);
+                    }, 45000); // Extended to 45 seconds
                 });
             }
-            """, key=f"location_request_{st.session_state.location_request_count}")
+            """, key=f"gps_priority_request_{st.session_state.location_request_count}")
         
         return location_data
     
@@ -215,21 +270,29 @@ class MeraiApp:
     
     def _try_ip_location(self):
         """
-        Try IP-based geolocation as a fallback method.
-        This is less accurate than GPS but works when GPS is unavailable.
+        Try IP-based geolocation ONLY when explicitly requested as fallback.
+        This is intentionally less prominent than GPS to encourage GPS usage.
         """
-        ip_lat, ip_lon, ip_addr = get_user_location()
-        if ip_lat is not None and ip_lon is not None:
-            st.session_state.latitude = ip_lat
-            st.session_state.longitude = ip_lon
-            st.session_state.address = f"IP Location: {ip_addr}"
-            st.session_state.location_detected = True
-            st.info(f"✅ Location detected by IP: {ip_addr}")
-            st.rerun()
-        else:
-            st.error("❌ Unable to detect location automatically. Please select your location on the map below.")
-            st.session_state.location_choice = "Select on map"
-            st.rerun()
+        with st.spinner("📍 Getting approximate location from IP address..."):
+            st.info("⚠️ Using IP-based location (less accurate than GPS)")
+            
+            ip_lat, ip_lon, ip_addr = get_user_location()
+            if ip_lat is not None and ip_lon is not None:
+                st.session_state.latitude = ip_lat
+                st.session_state.longitude = ip_lon
+                st.session_state.address = f"IP Location: {ip_addr}"
+                st.session_state.location_detected = True
+                
+                # Show accuracy warning
+                st.warning("📍 **IP Location Detected** - Accuracy: City level (~5-50km)")
+                st.info(f"📍 Location: {ip_addr}")
+                st.info("💡 **For better accuracy:** Try GPS detection again or use the map")
+                st.rerun()
+            else:
+                st.error("❌ IP-based location detection also failed.")
+                st.info("🗺️ **Please use the map below to set your location manually**")
+                st.session_state.location_choice = "Select on map"
+                st.rerun()
     
     def handle_map_selection(self):
         """Handle manual location selection using an interactive map."""
@@ -290,13 +353,25 @@ class MeraiApp:
         # Show current location information if available
         if st.session_state.address not in ["Not set", "Automatic Detection Failed"]:
             if "GPS Location" in st.session_state.address:
-                st.success("🎯 **Precise GPS Location Detected**")
+                st.success("🎯 **HIGH PRECISION GPS Location** 🛰️")
                 col1, col2 = st.columns(2)
                 with col1:
                     st.metric("📍 Latitude", f"{st.session_state.latitude:.6f}")
                 with col2:
                     st.metric("📍 Longitude", f"{st.session_state.longitude:.6f}")
-                st.info(f"📍 {st.session_state.address}")
+                st.success(f"🎯 {st.session_state.address}")
+                st.info("✨ **Perfect!** You're using the most accurate location method")
+                
+            elif "IP Location" in st.session_state.address:
+                st.warning("📍 **APPROXIMATE IP Location** 🌐")
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.metric("📍 Latitude", f"{st.session_state.latitude:.2f}")
+                with col2:
+                    st.metric("📍 Longitude", f"{st.session_state.longitude:.2f}")
+                st.warning(f"⚠️ {st.session_state.address}")
+                st.info("💡 **For better accuracy:** Try GPS detection or use the map")
+                
             else:
                 st.success(
                     f"📍 **Current Location:** {st.session_state.address} "
