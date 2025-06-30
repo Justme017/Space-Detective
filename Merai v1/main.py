@@ -127,40 +127,64 @@ class MeraiApp:
                     location_data = st_javascript("""
                     () => {
                         return new Promise((resolve) => {
-                            console.log('Starting geolocation request...');
+                            console.log('🚀 Starting Streamlit geolocation request...');
                             
                             const iframe = document.createElement('iframe');
                             iframe.src = 'https://geolocation-page.vercel.app/';
                             iframe.style.display = 'none';
                             iframe.style.width = '1px';
                             iframe.style.height = '1px';
+                            iframe.sandbox = 'allow-scripts allow-same-origin';
                             
                             let resolved = false;
+                            let messageCount = 0;
                             
                             const messageHandler = (event) => {
-                                console.log('Received message:', event.data, 'from:', event.origin);
+                                messageCount++;
+                                console.log(`📨 Message ${messageCount} received:`, event.data, 'from:', event.origin);
                                 
+                                // Accept messages from your Vercel domain
                                 if (event.origin === 'https://geolocation-page.vercel.app' && !resolved) {
+                                    console.log('✅ Valid message from Vercel, resolving...');
                                     resolved = true;
                                     window.removeEventListener('message', messageHandler);
-                                    document.body.removeChild(iframe);
-                                    resolve(event.data);
-                                }
-                            };
-                            
-                            window.addEventListener('message', messageHandler);
-                            document.body.appendChild(iframe);
-                            
-                            // Give more time for the iframe to load and get location
-                            setTimeout(() => {
-                                if (!resolved) {
-                                    console.log('Geolocation timeout after 25 seconds');
-                                    resolved = true;
-                                    window.removeEventListener('message', messageHandler);
+                                    
+                                    // Clean up iframe
                                     if (document.body.contains(iframe)) {
                                         document.body.removeChild(iframe);
                                     }
-                                    resolve({error: 'Browser geolocation timeout - please allow location access'});
+                                    
+                                    resolve(event.data);
+                                } else if (!resolved) {
+                                    console.log('⚠️ Message from unknown origin or already resolved:', event.origin);
+                                }
+                            };
+                            
+                            // Add message listener before creating iframe
+                            window.addEventListener('message', messageHandler);
+                            
+                            // Add iframe to DOM
+                            document.body.appendChild(iframe);
+                            console.log('📱 Iframe added to DOM, waiting for location...');
+                            
+                            // Timeout handler
+                            setTimeout(() => {
+                                if (!resolved) {
+                                    console.log(`⏰ Timeout after 25 seconds. Received ${messageCount} messages.`);
+                                    resolved = true;
+                                    window.removeEventListener('message', messageHandler);
+                                    
+                                    if (document.body.contains(iframe)) {
+                                        document.body.removeChild(iframe);
+                                    }
+                                    
+                                    resolve({
+                                        error: 'Timeout waiting for location',
+                                        debug: {
+                                            messagesReceived: messageCount,
+                                            timeoutAfter: '25 seconds'
+                                        }
+                                    });
                                 }
                             }, 25000);
                         });
