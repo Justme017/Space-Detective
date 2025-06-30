@@ -427,10 +427,10 @@ class MeraiApp:
                     )
                 
                 with col2:
-                    # Atlas version selector - prioritize local version
+                    # Atlas version selector - add experimental v3
                     atlas_version = st.selectbox(
                         "Atlas Type:",
-                        ["Local (Offline)", "Online (Aladin Lite)"],
+                        ["Local (Offline)", "Online (Aladin Lite)", "Experimental Aladin v3"],
                         index=0,
                         key="atlas_version_new",
                         help="Local version works without internet connection"
@@ -438,14 +438,12 @@ class MeraiApp:
 
                 if selected_target:
                     st.info(f"🎯 **Current target:** {selected_target} | **Atlas:** {atlas_version}")
-                    
                     # Render the appropriate sky atlas component
                     try:
                         if atlas_version == "Local (Offline)":
                             # Use the local sky atlas - works without internet
                             local_sky_atlas_component(target=selected_target, key="local-sky-atlas")
-                            
-                        else:  # Online (Aladin Lite)
+                        elif atlas_version == "Online (Aladin Lite)":
                             # Advanced online options
                             with st.expander("🔧 Advanced Online Options", expanded=True):
                                 col_a, col_b = st.columns(2)
@@ -460,11 +458,7 @@ class MeraiApp:
                                     }
                                     survey_name = st.selectbox("Survey", list(survey_options.keys()))
                                     atlas_height = st.slider("Height (pixels)", 400, 800, 500, 50)
-                            
-                            # Try the full online version with better error handling
                             st.info("🌐 Loading professional sky atlas... This may take a few moments.")
-                            
-                            # Use a container to better handle potential issues
                             atlas_container = st.container()
                             with atlas_container:
                                 try:
@@ -491,12 +485,31 @@ class MeraiApp:
                                         2. Refresh the page and try again
                                         3. Check your internet connection
                                     """)
-                                    
-                                    # Provide quick switch option
                                     if st.button("🔄 Switch to Local Atlas Now", key="quick-switch-local"):
                                         st.session_state.atlas_version_new = "Local (Offline)"
                                         st.rerun()
-                            
+                        elif atlas_version == "Experimental Aladin v3":
+                            st.info("🧪 Experimental Aladin Lite v3 integration (iframe method)")
+                            import streamlit.components.v1 as components
+                            aladin_html = f"""
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset=\"utf-8\">
+    <script type=\"text/javascript\" src=\"https://aladin.u-strasbg.fr/AladinLite/api/v3/latest/aladin.min.js\" ></script>
+    <link rel=\"stylesheet\" href=\"https://aladin.u-strasbg.fr/AladinLite/api/v3/latest/aladin.min.css\" />
+  </head>
+  <body>
+    <div id=\"aladin-lite-div\" style=\"width:800px;height:600px;\"></div>
+    <script type=\"text/javascript\">
+      var aladin = A.aladin('#aladin-lite-div', {"survey": "P/DSS2/color", "fov":0.5, "target": '{selected_target}'});
+    </script>
+  </body>
+</html>
+"""
+                            components.html(aladin_html, height=600, width=800)
+                        else:
+                            st.warning("Unknown atlas version selected.")
                     except Exception as e:
                         st.error(f"Error loading {atlas_version} atlas: {str(e)}")
                         st.info("🔄 Switching to Local (Offline) atlas...")
