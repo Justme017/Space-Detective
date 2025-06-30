@@ -19,7 +19,7 @@ git add .
 git commit -m "Initial deployment of Space Detective app"
 
 # Add your GitHub repository
-git remote add origin https://github.com/YOUR_USERNAME/space-detective.git
+git remote add origin https://github.com/justme017/space-detective.git
 
 # Push to GitHub
 git push -u origin main
@@ -31,29 +31,17 @@ git push -u origin main
 3. Click "New app"
 4. Select your repository: "space-detective"
 5. Set main file path: `Merai v1/main.py`
-6. Click "Deploy!"
+6. **IMPORTANT:** Leave requirements file path as default (`requirements.txt`) - it's now in the root directory
+7. Click "Deploy!"
 
 ### Step 4: Configure Advanced Settings (Optional)
 - Set Python version: 3.9+
 - Add secrets if needed
 - Configure custom domain
 
-## 🌐 Alternative Platforms
+## � Streamlit Cloud - Recommended & Simplified
 
-### Heroku
-- More control but costs money
-- Good for custom domains
-- Professional deployment
-
-### Railway
-- Free tier available
-- Automatic deployments
-- Simple setup
-
-### Google Cloud Run
-- Serverless deployment
-- Pay per use
-- Scalable
+This project is now optimized specifically for **Streamlit Cloud** deployment - the easiest and most reliable option for this app.
 
 ## 🔧 Troubleshooting
 
