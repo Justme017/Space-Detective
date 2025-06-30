@@ -8,4 +8,3 @@ skyfield>=1.46
 beautifulsoup4>=4.11.0
 streamlit-folium>=0.13.0
 folium>=0.14.0
-streamlit-components>=0.1.0
