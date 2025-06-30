@@ -122,22 +122,7 @@ class MeraiApp:
                     st.session_state.location_request_count = 0
                 st.session_state.location_request_count += 1
                 with st.spinner("🌍 Getting your precise location..."):
-                    # Add a visible test first
-                    st.info("🔄 Testing Vercel service visibility...")
-                    
-                    # Show iframe for debugging (temporary)
-                    import streamlit.components.v1 as components
-                    components.html(f"""
-                    <div style="border: 2px solid #ccc; padding: 10px; margin: 10px 0;">
-                        <h4>Debug: Vercel Service Test</h4>
-                        <iframe src="https://geolocation-page.vercel.app/" 
-                                width="100%" height="200" 
-                                style="border: 1px solid #ddd;">
-                        </iframe>
-                    </div>
-                    """, height=250)
-                    
-                    st.info("🔄 Now attempting invisible connection...")
+                    st.info("🔄 Connecting to geolocation service...")
                     
                     location_data = st_javascript("""
                     () => {
@@ -169,7 +154,7 @@ class MeraiApp:
                             // Give more time for the iframe to load and get location
                             setTimeout(() => {
                                 if (!resolved) {
-                                    console.log('Geolocation timeout after 20 seconds');
+                                    console.log('Geolocation timeout after 25 seconds');
                                     resolved = true;
                                     window.removeEventListener('message', messageHandler);
                                     if (document.body.contains(iframe)) {
@@ -177,7 +162,7 @@ class MeraiApp:
                                     }
                                     resolve({error: 'Browser geolocation timeout - please allow location access'});
                                 }
-                            }, 20000);
+                            }, 25000);
                         });
                     }
                     """, key=f"merai_geolocation_request_{st.session_state.get('location_request_count', 0)}")
@@ -189,9 +174,18 @@ class MeraiApp:
                     # More detailed debugging
                     if location_data is None:
                         st.error("❌ **DEBUG**: No data received from Vercel service (timeout)")
+                        st.info("💡 This means the iframe loaded but no postMessage was received")
                     elif isinstance(location_data, dict):
                         st.success("✅ **DEBUG**: Received dictionary data from Vercel")
                         st.json(location_data)
+                        
+                        # Check if it's the location data we expect
+                        if "latitude" in location_data and "longitude" in location_data:
+                            st.success("🎯 **PERFECT**: Valid location data received!")
+                        elif "error" in location_data:
+                            st.warning("⚠️ **ERROR DATA**: Received error from Vercel service")
+                        else:
+                            st.warning("⚠️ **UNKNOWN**: Received unexpected data format")
                     else:
                         st.warning(f"⚠️ **DEBUG**: Unexpected data type: {type(location_data)}")
                 
