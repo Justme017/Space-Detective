@@ -107,9 +107,10 @@ class MeraiApp:
                 st.session_state[key] = default_value
     
     def handle_location_detection(self):
-        """Handle automatic location detection using streamlit-geolocation."""
-        import streamlit as st
+        """Handle automatic location detection using streamlit-geolocation, with fallback to IP-based geolocation and manual map selection."""
         from streamlit_geolocation import streamlit_geolocation
+        import streamlit as st
+        from location_utils import get_user_location
 
         if "location_detected" not in st.session_state:
             st.session_state.location_detected = False
@@ -127,7 +128,19 @@ class MeraiApp:
                     st.write(f"Longitude: {loc['longitude']:.6f}")
                     st.rerun()
                 else:
-                    st.error("Unable to retrieve location. Please allow location access.")
+                    st.warning("Unable to retrieve location from browser. Trying IP-based geolocation...")
+                    ip_lat, ip_lon, ip_addr = get_user_location()
+                    if ip_lat is not None and ip_lon is not None:
+                        st.session_state.latitude = ip_lat
+                        st.session_state.longitude = ip_lon
+                        st.session_state.address = ip_addr
+                        st.session_state.location_detected = True
+                        st.success(f"\u2705 Location detected by IP: {ip_addr}")
+                        st.write(f"Latitude: {ip_lat:.6f}")
+                        st.write(f"Longitude: {ip_lon:.6f}")
+                        st.rerun()
+                    else:
+                        st.error("Unable to retrieve location. Please allow location access or select on map.")
         else:
             st.success(f"\u2705 Location detected: {st.session_state.address}")
             st.write(f"Latitude: {st.session_state.latitude:.6f}")
