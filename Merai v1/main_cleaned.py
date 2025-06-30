@@ -231,7 +231,8 @@ class MeraiApp:
         
         return enhanced_objects
     
-    def create_object_tile_html(self, name_h1, name_h2, obj_data, constellation, description, image_url):
+    @staticmethod
+    def create_object_tile_html(name_h1, name_h2, obj_data, constellation, description, image_url):
         """
         Create object tile using minimal HTML to avoid rendering issues.
         
@@ -244,7 +245,7 @@ class MeraiApp:
             image_url (str): URL of object image
         """
         # Get object emoji
-        type_emoji = self._get_object_emoji(obj_data['type'])
+        type_emoji = MeraiApp._get_object_emoji(obj_data['type'])
         
         # Create a simple container
         with st.container():
@@ -253,27 +254,22 @@ class MeraiApp:
             <div style="border: 2px solid #ffd700; border-radius: 15px; padding: 15px; margin: 10px 0; background: linear-gradient(135deg, #232526 0%, #414345 100%); box-shadow: 0 4px 15px rgba(0,0,0,0.5);">
             """, unsafe_allow_html=True)
             
-            # Image section
-            if image_url and image_url.startswith(('http://', 'https://')):
-                try:
-                    st.image(image_url, width=200)
-                except:
-                    st.markdown(f"## {type_emoji} {name_h1}")
-            else:
-                st.markdown(f"## {type_emoji} {name_h1}")
-            
-            # Title and subtitle
-            st.markdown(f"### 🌟 {name_h1}")
+            st.markdown(f"### {type_emoji} {name_h1}")
             if name_h2:
                 st.markdown(f"**{name_h2}**")
-            
-            # Object details
-            col1, col2 = st.columns(2)
+
+            col1, col2 = st.columns([1, 2])
+
             with col1:
-                st.write(f"**{type_emoji} Type:** {obj_data['type']}")
-                st.write(f"**🔺 Altitude:** {obj_data['altitude']}°")
+                if image_url and image_url.startswith(('http://', 'https://')):
+                    st.image(image_url, caption=name_h1, use_container_width=True)
+                else:
+                    st.markdown(f"<div style='text-align: center; font-size: 5rem;'>{type_emoji}</div>", unsafe_allow_html=True)
+
             with col2:
-                st.write(f"**🧭 Azimuth:** {obj_data['azimuth']}°")
+                st.write(f"**🌙 Type:** {obj_data['type']}")
+                st.write(f"**🔺 Altitude:** {obj_data['altitude']:.2f}°")
+                st.write(f"**🧭 Azimuth:** {obj_data['azimuth']:.2f}°")
                 st.write(f"**✨ Constellation:** {constellation}")
             
             # Description
@@ -290,7 +286,8 @@ class MeraiApp:
                 with st.expander("📖 Read full description"):
                     st.write(description)
     
-    def _get_object_emoji(self, obj_type):
+    @staticmethod
+    def _get_object_emoji(obj_type):
         """Get appropriate emoji for object type."""
         return {"Star": "⭐", "Planet": "🪐", "Sun": "☀️", "Moon": "🌙"}.get(obj_type, "🌌")
     
