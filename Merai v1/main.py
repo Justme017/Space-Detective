@@ -21,6 +21,9 @@ from wiki_utils import get_object_image_url, get_object_description, extract_nam
 from location_utils import get_user_location
 from constellation_utils import load_constellation_data
 from skychart_utils import create_sky_chart
+from aladin_lite import aladin_lite_component
+from aladin_simple import simple_aladin_lite_component, create_fallback_sky_info
+from local_sky_atlas import local_sky_atlas_component
 
 # Configuration constants
 MAX_DESC_LEN = 120
@@ -380,6 +383,120 @@ class MeraiApp:
                         
                 except Exception as e:
                     st.error(f"❌ Error generating sky chart: {str(e)}")
+
+            # --- Sky Atlas Integration ---
+            st.markdown("---")
+            st.subheader("🛰️ Interactive Sky Atlas")
+            st.markdown("*Explore the night sky with interactive astronomical viewers*")
+
+            object_names = [obj['name'] for obj in visible_objects]
+            if object_names:
+                # Create columns for better layout
+                col1, col2 = st.columns([3, 1])
+                
+                with col1:
+                    # Add a selectbox to choose the target
+                    selected_target = st.selectbox(
+                        "Select an object to view in the sky atlas:",
+                        options=object_names,
+                        index=0,  # Default to the first object
+                        key="aladin_target_selector",  # Add a key for stability
+                        help="Choose an astronomical object to center the view on"
+                    )
+                
+                with col2:
+                    # Atlas version selector - prioritize local version
+                    atlas_version = st.selectbox(
+                        "Atlas Type:",
+                        ["Local (Offline)", "Online (Aladin Lite)", "Simple Online"],
+                        index=0,
+                        key="atlas_version_new",
+                        help="Local version works without internet connection"
+                    )
+
+                if selected_target:
+                    st.info(f"🎯 **Current target:** {selected_target} | **Atlas:** {atlas_version}")
+                    
+                    # Render the appropriate sky atlas component
+                    try:
+                        if atlas_version == "Local (Offline)":
+                            # Use the local sky atlas - works without internet
+                            local_sky_atlas_component(target=selected_target, key="local-sky-atlas")
+                            
+                        elif atlas_version == "Simple Online":
+                            simple_aladin_lite_component(target=selected_target, key="simple-aladin-viewer")
+                            
+                        else:  # Online (Aladin Lite)
+                            # Advanced online options
+                            with st.expander("🔧 Advanced Online Options", expanded=True):
+                                col_a, col_b = st.columns(2)
+                                with col_a:
+                                    fov = st.slider("Field of View (degrees)", 1.0, 180.0, 60.0, 5.0)
+                                    show_catalogs = st.checkbox("Show catalog overlays", value=True)
+                                with col_b:
+                                    survey_options = {
+                                        "DSS2 Color": "P/DSS2/color",
+                                        "DSS2 Red": "P/DSS2/red",
+                                        "2MASS J": "P/2MASS/J"
+                                    }
+                                    survey_name = st.selectbox("Survey", list(survey_options.keys()))
+                                    atlas_height = st.slider("Height (pixels)", 400, 800, 500, 50)
+                            
+                            # Try the full online version
+                            aladin_lite_component(
+                                target=selected_target,
+                                key="aladin-lite-viewer",
+                                fov=fov,
+                                survey=survey_options[survey_name],
+                                height=atlas_height,
+                                show_catalog=show_catalogs
+                            )
+                            
+                    except Exception as e:
+                        st.error(f"Error loading {atlas_version} atlas: {str(e)}")
+                        st.info("🔄 Switching to Local (Offline) atlas...")
+                        local_sky_atlas_component(target=selected_target, key="fallback-local-atlas")
+                    
+                    # Add comparison and help
+                    with st.expander("ℹ️ Atlas Comparison & Help", expanded=False):
+                        st.markdown("""
+                        ### 🗺️ **Atlas Types:**
+                        
+                        **🏠 Local (Offline)** - *Recommended for localhost*
+                        - ✅ Works without internet connection
+                        - ✅ No CDN dependency issues
+                        - ✅ Interactive zoom, pan, and highlighting
+                        - ✅ Shows bright stars, planets, and deep-sky objects
+                        - ⚠️ Simplified catalog (major objects only)
+                        
+                        **🌐 Online (Aladin Lite)** - *Full-featured*
+                        - ✅ Complete astronomical surveys
+                        - ✅ Professional-grade accuracy
+                        - ✅ Multiple survey options
+                        - ❌ Requires stable internet connection
+                        - ❌ May not work on localhost due to CDN issues
+                        
+                        **🔗 Simple Online** - *Lightweight*
+                        - ✅ Basic Aladin Lite functionality
+                        - ✅ Fewer dependencies
+                        - ❌ Still requires internet connection
+                        
+                        ### 🔧 **Troubleshooting:**
+                        - If running on **localhost**, use "Local (Offline)" version
+                        - If behind **corporate firewall**, try "Local (Offline)" first
+                        - For **production deployment**, "Online (Aladin Lite)" works best
+                        """)
+                        
+                        # External links as ultimate fallback
+                        st.markdown(f"""
+                        ### 🔗 **External Resources:**
+                        - [View {selected_target} in Aladin Lite]({f"https://aladin.cds.unistra.fr/aladin.gml?target={selected_target.replace(' ', '%20')}"})
+                        - [SIMBAD Database]({f"http://simbad.u-strasbg.fr/simbad/sim-basic?Ident={selected_target.replace(' ', '+')}"})
+                        - [NASA/IPAC Database]({f"https://ned.ipac.caltech.edu/byname?objname={selected_target.replace(' ', '+')}"})
+                        """)
+            else:
+                st.info("No objects available to select for the sky atlas.")
+            # --- End of Sky Atlas Integration ---
         else:
             st.info("ℹ️ No objects visible to display on sky chart.")
     

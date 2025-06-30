@@ -1,0 +1,31 @@
+# Deployment configuration for various platforms
+
+# Streamlit Cloud
+# - Main file path: Merai v1/main.py
+# - Python version: 3.9
+
+# Railway
+# - Start command: streamlit run "Merai v1/main.py" --server.port=$PORT --server.address=0.0.0.0
+
+# Render
+# - Build command: pip install -r "Merai v1/requirements.txt"
+# - Start command: streamlit run "Merai v1/main.py" --server.port=$PORT --server.address=0.0.0.0
+
+# Fly.io
+# - Uses Dockerfile
+
+# Vercel (via vercel.json)
+{
+  "builds": [
+    {
+      "src": "Merai v1/main.py",
+      "use": "@vercel/python"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "Merai v1/main.py"
+    }
+  ]
+}
