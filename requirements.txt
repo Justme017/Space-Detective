@@ -7,5 +7,4 @@ plotly>=5.15.0
 skyfield>=1.46
 beautifulsoup4>=4.11.0
 streamlit-folium>=0.13.0
-geocoder>=1.38.1
 folium>=0.14.0
