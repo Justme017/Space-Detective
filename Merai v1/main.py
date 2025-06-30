@@ -110,16 +110,23 @@ class MeraiApp:
         """Handle automatic location detection."""
         if st.button("🌍 Detect My Location Now", type="primary"):
             with st.spinner("🔍 Detecting your location..."):
-                detected_lat, detected_lon, detected_address = get_user_location()
-                if detected_lat is None or detected_lon is None:
-                    st.info("⏳ Waiting for browser location permission... Please allow location access in your browser.")
-                    st.stop()
+                # Only call get_user_location if not already set
+                if (
+                    st.session_state.get('latitude', 0.0) == 0.0 or
+                    st.session_state.get('address', 'Not set') in ["Not set", "Automatic Detection Failed"]
+                ):
+                    detected_lat, detected_lon, detected_address = get_user_location()
+                    if detected_lat is None or detected_lon is None:
+                        st.info("⏳ Waiting for browser location permission... Please allow location access in your browser.")
+                        st.stop()
+                    else:
+                        st.session_state.latitude = detected_lat
+                        st.session_state.longitude = detected_lon
+                        st.session_state.address = detected_address
+                        st.success(f"✅ Location detected: {detected_address}")
+                        st.rerun()
                 else:
-                    st.session_state.latitude = detected_lat
-                    st.session_state.longitude = detected_lon
-                    st.session_state.address = detected_address
-                    st.success(f"✅ Location detected: {detected_address}")
-                    st.rerun()
+                    st.success(f"✅ Location detected: {st.session_state.address}")
     
     def handle_map_selection(self):
         """Handle manual location selection on map."""
@@ -469,7 +476,7 @@ class MeraiApp:
         st.markdown("---")
         st.markdown(
             "🔭 **Merai - A Space Detective** | Built with ❤️ using Streamlit and Skyfield | "
-            "Data from NASA JPL, Hipparcos, and Wikipedia"
+            "Data from NASA JPL, Hipparcos, Aladin and Wikipedia"
         )
 
 
