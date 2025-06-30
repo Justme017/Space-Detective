@@ -22,7 +22,6 @@ from location_utils import get_user_location
 from constellation_utils import load_constellation_data
 from skychart_utils import create_sky_chart
 from aladin_lite import aladin_lite_component
-from aladin_simple import simple_aladin_lite_component, create_fallback_sky_info
 from local_sky_atlas import local_sky_atlas_component
 
 # Configuration constants
@@ -408,7 +407,7 @@ class MeraiApp:
                     # Atlas version selector - prioritize local version
                     atlas_version = st.selectbox(
                         "Atlas Type:",
-                        ["Local (Offline)", "Online (Aladin Lite)", "Simple Online"],
+                        ["Local (Offline)", "Online (Aladin Lite)"],
                         index=0,
                         key="atlas_version_new",
                         help="Local version works without internet connection"
@@ -422,9 +421,6 @@ class MeraiApp:
                         if atlas_version == "Local (Offline)":
                             # Use the local sky atlas - works without internet
                             local_sky_atlas_component(target=selected_target, key="local-sky-atlas")
-                            
-                        elif atlas_version == "Simple Online":
-                            simple_aladin_lite_component(target=selected_target, key="simple-aladin-viewer")
                             
                         else:  # Online (Aladin Lite)
                             # Advanced online options
@@ -475,11 +471,6 @@ class MeraiApp:
                         - ✅ Multiple survey options
                         - ❌ Requires stable internet connection
                         - ❌ May not work on localhost due to CDN issues
-                        
-                        **🔗 Simple Online** - *Lightweight*
-                        - ✅ Basic Aladin Lite functionality
-                        - ✅ Fewer dependencies
-                        - ❌ Still requires internet connection
                         
                         ### 🔧 **Troubleshooting:**
                         - If running on **localhost**, use "Local (Offline)" version
