@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+  <body>
+    <h3>Detecting location...</h3>
+    <script>
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const loc = {
+            lat: position.coords.latitude,
+            lon: position.coords.longitude
+          };
+          window.parent.postMessage(JSON.stringify(loc), "*");
+        },
+        (error) => {
+          window.parent.postMessage(JSON.stringify({error: error.message}), "*");
+        }
+      );
+    </script>
+  </body>
+</html>
