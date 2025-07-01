@@ -123,42 +123,31 @@ class MeraiApp:
     def render_gps_section(self):
         """Render GPS detection with Vercel window and manual input."""
         
-        st.markdown(
-            """
-            <div style="display: flex; gap: 0; align-items: stretch;">
-                <!-- GPS Section -->
-                <div style="flex: 1.1; background: rgba(20, 20, 30, 0.85); border-radius: 15px; padding: 1.1rem 1rem; margin-right: 5px;">
+        col1, col2 = st.columns([1.1, 1], gap="small")
+
+        with col1:
+            st.markdown(
+                """
+                <div style="background: rgba(20, 20, 30, 0.85); border-radius: 15px; padding: 1.1rem 1rem; height: 420px;">
                     <h3 style="color: #ffd700;">🛰️ GPS Location Detection</h3>
                     <p style="color: #f1f1f1;"><strong>🌐 Vercel GPS Service:</strong></p>
                     <div style="border-radius: 15px; overflow: hidden; height: 300px;">
                         <iframe src="https://geolocation-page.vercel.app" width="100%" height="100%" style="border:none;"></iframe>
                     </div>
                 </div>
-
-                <!-- Manual Entry Section -->
-                <div style="flex: 1; background: rgba(20, 20, 30, 0.85); border-radius: 15px; padding: 1.1rem 1rem; margin-left: 5px;">
-                    <h3 style="color: #ffd700;">📍 Coordinate Entry</h3>
-                    <!-- Streamlit widgets will be rendered below this HTML block -->
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-
-        # We need to recreate the layout with columns to place the widgets, 
-        # but the visible styling will come from the HTML above.
-        col1, col2 = st.columns([1.1, 1], gap="small")
-
-        with col1:
-            # This column is a placeholder for layout alignment.
-            # The content is already defined in the HTML above.
-            # We just need to make sure the space is occupied.
-            st.markdown('<div style="height: 340px;"></div>', unsafe_allow_html=True)
-
+                """,
+                unsafe_allow_html=True
+            )
 
         with col2:
-            # The manual entry widgets are placed in the second column,
-            # which aligns with the styled div in the HTML.
+            st.markdown(
+                """
+                <div style="background: rgba(20, 20, 30, 0.85); border-radius: 15px; padding: 1.1rem 1rem; height: 420px;">
+                    <h3 style="color: #ffd700;">📍 Coordinate Entry</h3>
+                """,
+                unsafe_allow_html=True
+            )
+            
             manual_lat = st.number_input(
                 "Latitude",
                 min_value=-90.0,
@@ -166,8 +155,7 @@ class MeraiApp:
                 value=st.session_state.get('latitude', 0.0),
                 step=0.000001,
                 format="%.6f",
-                key="manual_lat",
-                label_visibility="collapsed"
+                key="manual_lat"
             )
             
             manual_lon = st.number_input(
@@ -177,8 +165,7 @@ class MeraiApp:
                 value=st.session_state.get('longitude', 0.0),
                 step=0.000001,
                 format="%.6f",
-                key="manual_lon",
-                label_visibility="collapsed"
+                key="manual_lon"
             )
             
             st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
@@ -187,6 +174,8 @@ class MeraiApp:
                     self._apply_coordinates(manual_lat, manual_lon, "Manual Entry")
                 else:
                     st.warning("⚠️ Enter valid coordinates")
+            
+            st.markdown("</div>", unsafe_allow_html=True)
 
     def handle_location_detection(self):
         """
