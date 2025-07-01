@@ -8,6 +8,7 @@ including planets and bright stars from a given location and time using Skyfield
 import os
 from skyfield.api import load, Topos, Star
 from skyfield.data import hipparcos
+from wiki_utils import get_object_description, extract_name_from_description
 
 # Get the directory where astro_utils.py is located
 _CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -116,3 +117,53 @@ def get_visible_objects(lat, lon, user_dt=None):
         pass
     
     return visible
+
+def enhance_visible_objects(visible_objects, constellation_map):
+    """
+    Enhance astronomical objects with additional information from Wikipedia.
+    
+    This function takes the basic astronomical data and adds:
+    - Detailed descriptions from Wikipedia
+    - Constellation information for stars
+    - Better names extracted from descriptions
+    
+    Args:
+        visible_objects (list): List of basic astronomical objects
+        constellation_map (dict): Mapping of HIP IDs to constellation names
+        
+    Returns:
+        list: Enhanced objects with additional information
+    """
+    enhanced_objects = []
+    
+    for obj in visible_objects:
+        # Get Wikipedia description for the object
+        hip_id = obj.get('hip_id')
+        # For stars, use HIP ID if available, otherwise use name
+        description_lookup_key = hip_id if obj['type'] == 'Star' and hip_id else obj['name']
+        description = get_object_description(description_lookup_key)
+
+        # Try to extract a better name from the description for stars
+        name_from_desc = None
+        if obj['type'] == 'Star' and description:
+            name_from_desc = extract_name_from_description(description)
+            if name_from_desc:
+                obj['name'] = name_from_desc
+
+        # Add the enhanced information to the object
+        obj['fetched_description'] = description
+        obj['name_extracted_from_description_for_tile_h1'] = name_from_desc
+
+        # Add constellation information for stars
+        if obj['type'] == 'Star':
+            hip_int_for_lookup = obj.get('hip_int')
+            if hip_int_for_lookup and constellation_map:
+                obj['constellation'] = constellation_map.get(hip_int_for_lookup, "Unknown")
+            else:
+                obj['constellation'] = "Unknown"
+        else:
+            obj['constellation'] = "N/A"
+
+        enhanced_objects.append(obj)
+    
+    return enhanced_objects
