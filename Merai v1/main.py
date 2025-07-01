@@ -122,31 +122,22 @@ class MeraiApp:
 
     def render_gps_section(self):
         """Render GPS detection with Vercel window and manual input."""
+        import streamlit.components.v1 as components
         
-        col1, col2 = st.columns([1.1, 1], gap="small")
+        st.markdown("### 🛰️ GPS Location & Manual Entry")
+        col1, col2 = st.columns([1.1, 1], gap="medium")
 
         with col1:
-            st.markdown(
-                """
-                <div style="background: rgba(20, 20, 30, 0.85); border-radius: 15px; padding: 1.1rem 1rem; height: 420px;">
-                    <h3 style="color: #ffd700;">🛰️ GPS Location Detection</h3>
-                    <p style="color: #f1f1f1;"><strong>🌐 Vercel GPS Service:</strong></p>
-                    <div style="border-radius: 15px; overflow: hidden; height: 300px;">
-                        <iframe src="https://geolocation-page.vercel.app" width="100%" height="100%" style="border:none;"></iframe>
-                    </div>
-                </div>
-                """,
-                unsafe_allow_html=True
+            st.markdown("**🌐 GPS Service:**")
+            components.iframe(
+                "https://geolocation-page.vercel.app",
+                width=400,
+                height=350,
+                scrolling=True
             )
 
         with col2:
-            st.markdown(
-                """
-                <div style="background: rgba(20, 20, 30, 0.85); border-radius: 15px; padding: 1.1rem 1rem; height: 420px;">
-                    <h3 style="color: #ffd700;">📍 Coordinate Entry</h3>
-                """,
-                unsafe_allow_html=True
-            )
+            st.markdown("**📍 Coordinate Entry:**")
             
             manual_lat = st.number_input(
                 "Latitude",
@@ -174,8 +165,6 @@ class MeraiApp:
                     self._apply_coordinates(manual_lat, manual_lon, "Manual Entry")
                 else:
                     st.warning("⚠️ Enter valid coordinates")
-            
-            st.markdown("</div>", unsafe_allow_html=True)
 
     def handle_location_detection(self):
         """
