@@ -123,10 +123,65 @@ class MeraiApp:
                     
                     location_data = self._get_gps_location()
                     
-                    # Debug: Show what we received
-                    st.write("🔍 **Debug Info:**")
-                    st.write("Data type:", type(location_data))
-                    st.write("Data content:", location_data)
+                    # 🪟 VERCEL DEBUG WINDOW
+                    st.markdown("---")
+                    st.markdown("### 🔍 **Vercel Communication Debug Window**")
+                    
+                    # Create debug columns
+                    debug_col1, debug_col2 = st.columns(2)
+                    
+                    with debug_col1:
+                        st.markdown("**📨 Raw Response from Vercel:**")
+                        if location_data:
+                            st.json(location_data)
+                        else:
+                            st.warning("No response received")
+                        
+                        st.markdown("**🔍 Data Analysis:**")
+                        st.write(f"• **Type:** `{type(location_data)}`")
+                        if location_data:
+                            if isinstance(location_data, dict):
+                                st.write(f"• **Keys:** {list(location_data.keys())}")
+                                st.write(f"• **Values:** {list(location_data.values())}")
+                            else:
+                                st.write(f"• **Content:** {location_data}")
+                        else:
+                            st.write("• **Content:** Empty/None")
+                    
+                    with debug_col2:
+                        st.markdown("**🌐 Vercel Service Status:**")
+                        st.write("• **URL:** `https://geolocation-page.vercel.app`")
+                        st.write("• **Method:** iframe + postMessage")
+                        st.write("• **Timeout:** 45 seconds")
+                        
+                        # Test direct connection
+                        if st.button("🧪 Test Direct Vercel Connection"):
+                            st.write("Opening Vercel service in new tab...")
+                            st.markdown(
+                                '<a href="https://geolocation-page.vercel.app" target="_blank">🔗 Open Vercel GPS Service</a>',
+                                unsafe_allow_html=True
+                            )
+                        
+                        st.markdown("**🛠️ Expected Data Format:**")
+                        st.code("""
+SUCCESS:
+{
+  "latitude": 40.7128,
+  "longitude": -74.0060,
+  "accuracy": 50,
+  "timestamp": "2025-01-01T12:00:00Z"
+}
+
+ERROR:
+{
+  "error": "Permission denied",
+  "code": 1
+}
+                        """, language="json")
+                    
+                    st.markdown("---")
+                    
+                    # Process the data with enhanced feedback
                     
                     if location_data and "latitude" in location_data and "longitude" in location_data:
                         # SUCCESS! GPS location detected
@@ -586,6 +641,142 @@ class MeraiApp:
         else:
             st.info("ℹ️ No objects visible to display on sky chart.")
     
+    def render_vercel_debug_section(self):
+        """Render a debug section that shows the Vercel service directly."""
+        st.header("🛠️ Vercel GPS Service Debug")
+        
+        debug_tab1, debug_tab2, debug_tab3 = st.tabs(["📡 Live Vercel Service", "🔍 Communication Test", "📋 Service Info"])
+        
+        with debug_tab1:
+            st.markdown("**🌐 Live Vercel GPS Service (Embedded)**")
+            st.info("This is the actual Vercel service your app uses. Allow location access to test it.")
+            
+            # Embed the actual Vercel service
+            import streamlit.components.v1 as components
+            components.iframe(
+                "https://geolocation-page.vercel.app",
+                width=800,
+                height=400,
+                scrolling=True
+            )
+            
+        with debug_tab2:
+            st.markdown("**🧪 Test Vercel Communication**")
+            
+            if st.button("🚀 Run Communication Test"):
+                with st.spinner("Testing Vercel communication..."):
+                    # Run the same code as the main app
+                    test_data = self._get_gps_location()
+                    
+                    st.markdown("### 📊 Test Results:")
+                    col1, col2 = st.columns(2)
+                    
+                    with col1:
+                        st.markdown("**📨 Received Data:**")
+                        if test_data:
+                            st.json(test_data)
+                            
+                            # Analyze the data
+                            if isinstance(test_data, dict):
+                                if "latitude" in test_data and "longitude" in test_data:
+                                    st.success("✅ GPS coordinates received successfully!")
+                                    st.metric("📍 Latitude", f"{test_data['latitude']:.6f}")
+                                    st.metric("📍 Longitude", f"{test_data['longitude']:.6f}")
+                                    if "accuracy" in test_data:
+                                        st.metric("🎯 Accuracy", f"±{test_data['accuracy']}m")
+                                elif "error" in test_data:
+                                    st.error(f"❌ GPS Error: {test_data['error']}")
+                                else:
+                                    st.warning("⚠️ Unexpected data format")
+                            else:
+                                st.warning(f"⚠️ Expected dict, got {type(test_data)}")
+                        else:
+                            st.error("❌ No data received from Vercel service")
+                    
+                    with col2:
+                        st.markdown("**🔧 Troubleshooting:**")
+                        if not test_data:
+                            st.error("🚫 No Response")
+                            st.markdown("""
+                            **Possible causes:**
+                            - Vercel service is down
+                            - Network connectivity issues
+                            - Browser blocking iframe communication
+                            - JavaScript execution blocked
+                            """)
+                        elif isinstance(test_data, dict) and "error" in test_data:
+                            st.warning("⚠️ GPS Error Received")
+                            error_code = test_data.get("code", "Unknown")
+                            st.markdown(f"""
+                            **Error Code:** {error_code}
+                            
+                            **Solutions:**
+                            - Allow location access in browser
+                            - Check if location services are enabled
+                            - Try a different browser
+                            - Ensure HTTPS connection
+                            """)
+                        else:
+                            st.success("✅ Communication Working")
+                            st.markdown("""
+                            **Status:** Data exchange successful
+                            
+                            **Next steps:**
+                            - Data format looks correct
+                            - Integration should work properly
+                            - Check main app logic if issues persist
+                            """)
+        
+        with debug_tab3:
+            st.markdown("**📋 Vercel Service Information**")
+            
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.markdown("**🌐 Service Details:**")
+                st.code("""
+Service URL: https://geolocation-page.vercel.app
+Method: HTML5 Geolocation API
+Communication: postMessage API
+Timeout: 45 seconds
+Security: HTTPS + Origin validation
+                """)
+                
+                st.markdown("**🔄 Data Flow:**")
+                st.markdown("""
+                1. 🖥️ Streamlit creates invisible iframe
+                2. 📡 iframe loads Vercel GPS service
+                3. 🌍 Vercel requests device location
+                4. 📱 User grants/denies permission
+                5. 📨 Vercel sends data via postMessage
+                6. ✅ Streamlit receives and processes data
+                """)
+            
+            with col2:
+                st.markdown("**📊 Expected Data Formats:**")
+                
+                st.markdown("**✅ Success Response:**")
+                st.code("""
+{
+  "latitude": 40.7128,
+  "longitude": -74.0060,
+  "accuracy": 50,
+  "timestamp": "2025-01-01T12:00:00.000Z",
+  "altitude": 10,
+  "heading": null,
+  "speed": null
+}
+                """, language="json")
+                
+                st.markdown("**❌ Error Response:**")
+                st.code("""
+{
+  "error": "Location access denied by user",
+  "code": 1,
+  "timestamp": "2025-01-01T12:00:00.000Z"
+}
+                """, language="json")
+    
     def run(self):
         """Run the main application."""
         # App title and description
@@ -607,6 +798,11 @@ class MeraiApp:
         
         # Render main sections
         self.render_location_section()
+        
+        # 🛠️ DEBUG: Add Vercel debugging section
+        with st.expander("🛠️ **Developer Tools: Vercel GPS Debug**", expanded=False):
+            self.render_vercel_debug_section()
+        
         dt = self.render_datetime_section()
         
         # Validate location before proceeding
