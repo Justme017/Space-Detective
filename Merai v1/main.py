@@ -142,6 +142,31 @@ class MeraiApp:
                         if location_data:
                             if isinstance(location_data, dict):
                                 st.write(f"• **Keys:** {list(location_data.keys())}")
+                                
+                                # 📋 QUICK COPY COORDINATES
+                                if "latitude" in location_data and "longitude" in location_data:
+                                    st.markdown("**📋 Quick Copy Coordinates:**")
+                                    quick_col1, quick_col2 = st.columns(2)
+                                    with quick_col1:
+                                        lat_val = location_data["latitude"]
+                                        st.code(f"{lat_val}", language="text")
+                                        st.caption("👆 Latitude - Copy this value")
+                                    with quick_col2:
+                                        lon_val = location_data["longitude"] 
+                                        st.code(f"{lon_val}", language="text")
+                                        st.caption("👆 Longitude - Copy this value")
+                                    
+                                    # Auto-apply button
+                                    if st.button("🚀 Auto-Apply These Coordinates"):
+                                        st.session_state.latitude = float(lat_val)
+                                        st.session_state.longitude = float(lon_val)
+                                        accuracy = location_data.get('accuracy', 'unknown')
+                                        st.session_state.address = f"GPS Location ({lat_val:.6f}, {lon_val:.6f}) ±{accuracy}m"
+                                        st.session_state.location_detected = True
+                                        st.success("🎯 Coordinates auto-applied from Vercel!")
+                                        st.balloons()
+                                        st.rerun()
+                                
                                 st.write(f"• **Values:** {list(location_data.values())}")
                             else:
                                 st.write(f"• **Content:** {location_data}")
@@ -645,137 +670,71 @@ ERROR:
         """Render a debug section that shows the Vercel service directly."""
         st.header("🛠️ Vercel GPS Service Debug")
         
-        debug_tab1, debug_tab2, debug_tab3 = st.tabs(["📡 Live Vercel Service", "🔍 Communication Test", "📋 Service Info"])
+        st.markdown("**🌐 Live Vercel GPS Service (Embedded)**")
+        st.info("This is the actual Vercel service your app uses. Allow location access to test it.")
         
-        with debug_tab1:
-            st.markdown("**🌐 Live Vercel GPS Service (Embedded)**")
-            st.info("This is the actual Vercel service your app uses. Allow location access to test it.")
-            
-            # Embed the actual Vercel service
-            import streamlit.components.v1 as components
-            components.iframe(
-                "https://geolocation-page.vercel.app",
-                width=800,
-                height=400,
-                scrolling=True
+        # Embed the actual Vercel service
+        import streamlit.components.v1 as components
+        components.iframe(
+            "https://geolocation-page.vercel.app",
+            width=800,
+            height=400,
+            scrolling=True
+        )
+        
+        # 📍 MANUAL COORDINATE INPUT SECTION
+        st.markdown("---")
+        st.markdown("### 📍 **Manual Coordinate Entry**")
+        st.info("💡 **Instructions:** Copy the Lat/Lon values from the Vercel window above and paste them here")
+        
+        manual_col1, manual_col2, manual_col3 = st.columns([1, 1, 1])
+        
+        with manual_col1:
+            manual_lat = st.number_input(
+                "🌍 Latitude",
+                min_value=-90.0,
+                max_value=90.0,
+                value=0.0,
+                step=0.000001,
+                format="%.6f",
+                help="Copy latitude from Vercel window above"
             )
-            
-        with debug_tab2:
-            st.markdown("**🧪 Test Vercel Communication**")
-            
-            if st.button("🚀 Run Communication Test"):
-                with st.spinner("Testing Vercel communication..."):
-                    # Run the same code as the main app
-                    test_data = self._get_gps_location()
-                    
-                    st.markdown("### 📊 Test Results:")
-                    col1, col2 = st.columns(2)
-                    
-                    with col1:
-                        st.markdown("**📨 Received Data:**")
-                        if test_data:
-                            st.json(test_data)
-                            
-                            # Analyze the data
-                            if isinstance(test_data, dict):
-                                if "latitude" in test_data and "longitude" in test_data:
-                                    st.success("✅ GPS coordinates received successfully!")
-                                    st.metric("📍 Latitude", f"{test_data['latitude']:.6f}")
-                                    st.metric("📍 Longitude", f"{test_data['longitude']:.6f}")
-                                    if "accuracy" in test_data:
-                                        st.metric("🎯 Accuracy", f"±{test_data['accuracy']}m")
-                                elif "error" in test_data:
-                                    st.error(f"❌ GPS Error: {test_data['error']}")
-                                else:
-                                    st.warning("⚠️ Unexpected data format")
-                            else:
-                                st.warning(f"⚠️ Expected dict, got {type(test_data)}")
-                        else:
-                            st.error("❌ No data received from Vercel service")
-                    
-                    with col2:
-                        st.markdown("**🔧 Troubleshooting:**")
-                        if not test_data:
-                            st.error("🚫 No Response")
-                            st.markdown("""
-                            **Possible causes:**
-                            - Vercel service is down
-                            - Network connectivity issues
-                            - Browser blocking iframe communication
-                            - JavaScript execution blocked
-                            """)
-                        elif isinstance(test_data, dict) and "error" in test_data:
-                            st.warning("⚠️ GPS Error Received")
-                            error_code = test_data.get("code", "Unknown")
-                            st.markdown(f"""
-                            **Error Code:** {error_code}
-                            
-                            **Solutions:**
-                            - Allow location access in browser
-                            - Check if location services are enabled
-                            - Try a different browser
-                            - Ensure HTTPS connection
-                            """)
-                        else:
-                            st.success("✅ Communication Working")
-                            st.markdown("""
-                            **Status:** Data exchange successful
-                            
-                            **Next steps:**
-                            - Data format looks correct
-                            - Integration should work properly
-                            - Check main app logic if issues persist
-                            """)
         
-        with debug_tab3:
-            st.markdown("**📋 Vercel Service Information**")
-            
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                st.markdown("**🌐 Service Details:**")
-                st.code("""
-Service URL: https://geolocation-page.vercel.app
-Method: HTML5 Geolocation API
-Communication: postMessage API
-Timeout: 45 seconds
-Security: HTTPS + Origin validation
-                """)
-                
-                st.markdown("**🔄 Data Flow:**")
-                st.markdown("""
-                1. 🖥️ Streamlit creates invisible iframe
-                2. 📡 iframe loads Vercel GPS service
-                3. 🌍 Vercel requests device location
-                4. 📱 User grants/denies permission
-                5. 📨 Vercel sends data via postMessage
-                6. ✅ Streamlit receives and processes data
-                """)
-            
-            with col2:
-                st.markdown("**📊 Expected Data Formats:**")
-                
-                st.markdown("**✅ Success Response:**")
-                st.code("""
-{
-  "latitude": 40.7128,
-  "longitude": -74.0060,
-  "accuracy": 50,
-  "timestamp": "2025-01-01T12:00:00.000Z",
-  "altitude": 10,
-  "heading": null,
-  "speed": null
-}
-                """, language="json")
-                
-                st.markdown("**❌ Error Response:**")
-                st.code("""
-{
-  "error": "Location access denied by user",
-  "code": 1,
-  "timestamp": "2025-01-01T12:00:00.000Z"
-}
-                """, language="json")
+        with manual_col2:
+            manual_lon = st.number_input(
+                "🌍 Longitude", 
+                min_value=-180.0,
+                max_value=180.0,
+                value=0.0,
+                step=0.000001,
+                format="%.6f",
+                help="Copy longitude from Vercel window above"
+            )
+        
+        with manual_col3:
+            st.markdown("**🎯 Apply Coordinates**")
+            if st.button("✅ Use These Coordinates", type="primary"):
+                if manual_lat != 0.0 or manual_lon != 0.0:
+                    # Set the location using manual coordinates
+                    st.session_state.latitude = manual_lat
+                    st.session_state.longitude = manual_lon
+                    st.session_state.address = f"Manual GPS Entry ({manual_lat:.6f}, {manual_lon:.6f})"
+                    st.session_state.location_detected = True
+                    st.success("🎯 Manual GPS coordinates applied successfully!")
+                    st.balloons()
+                    st.rerun()
+                else:
+                    st.warning("⚠️ Please enter valid coordinates (not 0,0)")
+        
+        # Show current coordinates if set
+        if st.session_state.latitude != 0.0 or st.session_state.longitude != 0.0:
+            st.markdown("**📍 Current App Location:**")
+            current_col1, current_col2 = st.columns(2)
+            with current_col1:
+                st.metric("Current Latitude", f"{st.session_state.latitude:.6f}")
+            with current_col2:
+                st.metric("Current Longitude", f"{st.session_state.longitude:.6f}")
+            st.info(f"📍 Address: {st.session_state.address}")
     
     def run(self):
         """Run the main application."""
