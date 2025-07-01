@@ -131,8 +131,8 @@ class MeraiApp:
             st.markdown("**🌐 GPS Service:**")
             components.iframe(
                 "https://geolocation-page.vercel.app",
-                width=400,
-                height=350,
+                width=600,
+                height=250,
                 scrolling=True
             )
 
