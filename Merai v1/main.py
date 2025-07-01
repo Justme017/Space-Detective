@@ -80,6 +80,14 @@ class MeraiApp:
                 border-radius: 8px;
                 border: 1px solid rgba(255, 215, 0, 0.3);
             }
+            
+            /* Container for manual coordinate entry */
+            .manual-entry-container {
+                background: rgba(20, 30, 40, 0.8);
+                padding: 1.5rem;
+                border-radius: 15px;
+                border: 1px solid #2c5364;
+            }
             </style>
             """,
             unsafe_allow_html=True
@@ -117,12 +125,13 @@ class MeraiApp:
         st.markdown("### 🛰️ GPS Location Detection")
         
         # Vercel Window and Manual Entry Side by Side
-        col1, col2 = st.columns([1.1, 1])
+        col1, col2 = st.columns([1.1, 1], gap="small") # Use "small" gap
         
         with col1:
             st.markdown("**🌐 Vercel GPS Service:**")
+            # The iframe is wrapped in a styled div for rounded corners
             st.markdown(
-                '<div style="border-radius: 10px; overflow: hidden; margin-right: 20px;">', 
+                '<div style="border-radius: 15px; overflow: hidden;">', 
                 unsafe_allow_html=True
             )
             import streamlit.components.v1 as components
@@ -135,7 +144,19 @@ class MeraiApp:
             st.markdown('</div>', unsafe_allow_html=True)
 
         with col2:
-            st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
+            # Wrap manual entry in a styled container for a cohesive look
+            st.markdown(
+                """
+                <div style="
+                    background: rgba(20, 20, 30, 0.85); 
+                    border-radius: 15px; 
+                    padding: 1.1rem 1rem 1rem 1rem; 
+                    height: 332px;
+                ">
+                """,
+                unsafe_allow_html=True
+            )
+            
             st.markdown("**📍 Coordinate Entry:**")
             
             manual_lat = st.number_input(
@@ -164,6 +185,8 @@ class MeraiApp:
                     self._apply_coordinates(manual_lat, manual_lon, "Manual Entry")
                 else:
                     st.warning("⚠️ Enter valid coordinates")
+            
+            st.markdown("</div>", unsafe_allow_html=True)
 
     def handle_location_detection(self):
         """
