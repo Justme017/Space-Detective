@@ -126,6 +126,8 @@ def _render_gps_section():
                 _apply_coordinates(location_data['latitude'], location_data['longitude'], "GPS")
             else:
                 st.error("Could not retrieve GPS location. Please use manual entry or the map.")
+                st.info("If GPS fails, you can grant location permissions manually by visiting the link below, then try again:")
+                st.code("https://geolocation-page.vercel.app/")
 
     with st.form("manual_coords_form"):
         lat = st.number_input("Latitude", -90.0, 90.0, format="%.6f")
