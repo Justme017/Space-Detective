@@ -122,12 +122,23 @@ class MeraiApp:
 
     def render_gps_section(self):
         """Render GPS detection with Vercel window and manual input."""
-        st.markdown("### 🛰️ GPS Location Detection")
         
         # Vercel Window and Manual Entry Side by Side
-        col1, col2 = st.columns([1.1, 1], gap="small") # Use "small" gap
-        
+        col1, col2 = st.columns([1.1, 1], gap="small")
+
         with col1:
+            st.markdown(
+                """
+                <div style="
+                    background: rgba(20, 20, 30, 0.85); 
+                    border-radius: 15px; 
+                    padding: 1.1rem 1rem 1rem 1rem; 
+                    height: 370px;
+                ">
+                """,
+                unsafe_allow_html=True
+            )
+            st.markdown("### 🛰️ GPS Location Detection")
             st.markdown("**🌐 Vercel GPS Service:**")
             # The iframe is wrapped in a styled div for rounded corners
             st.markdown(
@@ -142,6 +153,7 @@ class MeraiApp:
                 scrolling=True
             )
             st.markdown('</div>', unsafe_allow_html=True)
+            st.markdown("</div>", unsafe_allow_html=True)
 
         with col2:
             # Wrap manual entry in a styled container for a cohesive look
@@ -151,13 +163,13 @@ class MeraiApp:
                     background: rgba(20, 20, 30, 0.85); 
                     border-radius: 15px; 
                     padding: 1.1rem 1rem 1rem 1rem; 
-                    height: 332px;
+                    height: 370px;
                 ">
                 """,
                 unsafe_allow_html=True
             )
             
-            st.markdown("**📍 Coordinate Entry:**")
+            st.markdown("### 📍 Coordinate Entry")
             
             manual_lat = st.number_input(
                 "Latitude",
