@@ -453,12 +453,11 @@ class MeraiApp:
             name_from_desc = None
             if obj['type'] == 'Star' and description:
                 name_from_desc = extract_name_from_description(description)
-                if name_from_desc:
-                    obj['name'] = name_from_desc
+                # Don't overwrite the original name, just store the extracted one
+                obj['name_from_description'] = name_from_desc
 
             # Add the enhanced information to the object
             obj['fetched_description'] = description
-            obj['name_extracted_from_description_for_tile_h1'] = name_from_desc
 
             # Add constellation information for stars
             if obj['type'] == 'Star':
@@ -492,14 +491,14 @@ class MeraiApp:
             obj_data (dict): Dictionary containing all object information
         """
         # Get display information
-        display_name = obj_data.get('name') or obj_data.get('name_extracted_from_description_for_tile_h1') or obj_data.get('hip_id', 'Unnamed Star')
+        display_name = obj_data.get('name') or obj_data.get('name_from_description') or obj_data.get('hip_id', 'Unnamed Star')
         secondary_name = obj_data.get('hip_id', '') if obj_data['type'] == 'Star' and display_name != obj_data.get('hip_id') else ''
-        description = obj_data['fetched_description']
+        description = obj_data.get('fetched_description') # Use .get for safety
         constellation = obj_data.get('constellation', "N/A")
         
         # Get emoji and image
         type_emoji = self.get_object_emoji(obj_data['type'])
-        image_url = get_object_image_url(obj_data['name'])
+        image_url = get_object_image_url(display_name) # Use display_name for image lookup
         
         # Create tile with custom styling
         with st.container():
@@ -534,17 +533,15 @@ class MeraiApp:
             
             # Show description (truncated if too long)
             if description and description != "Description not available.":
-                desc_content = (description[:MAX_DESC_LEN] + "..." 
-                               if len(description) > MAX_DESC_LEN 
-                               else description)
-                st.write(f"**📖 Description:** {desc_content}")
+                if len(description) > MAX_DESC_LEN:
+                    desc_content = description[:MAX_DESC_LEN] + "..."
+                    st.write(f"**📖 Description:** {desc_content}")
+                    with st.expander("📖 Read full description"):
+                        st.write(description)
+                else:
+                    st.write(f"**📖 Description:** {description}")
             
             st.markdown("</div>", unsafe_allow_html=True)
-            
-            # Expandable full description
-            if description and description != "Description not available." and len(description) > MAX_DESC_LEN:
-                with st.expander("📖 Read full description"):
-                    st.write(description)
     
     def create_object_tiles(self, objects):
         """
