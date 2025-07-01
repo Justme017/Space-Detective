@@ -95,13 +95,12 @@ def get_visible_objects(lat, lon, user_dt=None):
                     hip_id_str = f"HIP {hip_id_int}"
                     
                     # Determine the primary display name
+                    display_name_h1 = None
                     if proper_name and str(proper_name).strip() and str(proper_name).strip().lower() != 'nan':
                         display_name_h1 = str(proper_name).strip()
-                    else:
-                        display_name_h1 = hip_id_str
                     
                     visible.append({
-                        'name': display_name_h1,  # Primary name for H1 (Common name or HIP ID)
+                        'name': display_name_h1,  # Primary name for H1 (Common name or None)
                         'hip_id': hip_id_str,     # Always the HIP ID, for H2
                         'hip_int': hip_id_int,    # Add integer HIP ID for constellation lookup
                         'type': 'Star',

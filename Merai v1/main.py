@@ -492,10 +492,8 @@ class MeraiApp:
             obj_data (dict): Dictionary containing all object information
         """
         # Get display information
-        display_name = (obj_data['name_extracted_from_description_for_tile_h1'] 
-                       if obj_data['name_extracted_from_description_for_tile_h1'] 
-                       else obj_data['name'])
-        secondary_name = obj_data.get('hip_id', '') if obj_data['type'] == 'Star' else ''
+        display_name = obj_data.get('name') or obj_data.get('name_extracted_from_description_for_tile_h1') or obj_data.get('hip_id', 'Unnamed Star')
+        secondary_name = obj_data.get('hip_id', '') if obj_data['type'] == 'Star' and display_name != obj_data.get('hip_id') else ''
         description = obj_data['fetched_description']
         constellation = obj_data.get('constellation', "N/A")
         
@@ -707,7 +705,6 @@ class MeraiApp:
                 🔭 <strong>Merai - A Space Detective</strong> | 
                 Built with ❤️ using Streamlit and Skyfield | 
                 Data from NASA JPL, Hipparcos, and Wikipedia<br>
-                <em>Educational tool for learning astronomy and web development</em>
             </div>
             """,
             unsafe_allow_html=True
