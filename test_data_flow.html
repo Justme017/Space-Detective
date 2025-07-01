@@ -3,162 +3,151 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Test Vercel Data Flow</title>
+    <title>Geolocation Service Data Flow Test</title>
     <style>
+        :root {
+            --bg-color: #f0f2f5;
+            --container-bg: #ffffff;
+            --log-bg: #1e1e1e;
+            --log-color: #d4d4d4;
+            --primary-color: #007bff;
+            --success-color: #28a745;
+            --error-color: #dc3545;
+        }
         body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 20px auto;
-            padding: 20px;
-            background: #f5f5f5;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: #333;
+            margin: 0;
+            padding: 1rem;
         }
         .container {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background-color: var(--container-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
-        .log {
-            background: #000;
-            color: #0f0;
-            padding: 15px;
-            border-radius: 5px;
-            font-family: monospace;
-            height: 300px;
-            overflow-y: auto;
-            margin: 10px 0;
+        h1, h2 {
+            color: var(--primary-color);
         }
-        button {
-            background: #007bff;
+        .controls button {
+            background-color: var(--primary-color);
             color: white;
             border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
             cursor: pointer;
-            margin: 5px;
+            font-size: 1rem;
+            margin-right: 0.5rem;
+            transition: background-color 0.2s;
         }
-        button:hover {
-            background: #0056b3;
+        .controls button:hover { background-color: #0056b3; }
+        #log {
+            background-color: var(--log-bg);
+            color: var(--log-color);
+            padding: 1rem;
+            border-radius: 8px;
+            height: 300px;
+            overflow-y: scroll;
+            font-family: "SF Mono", "Consolas", monospace;
+            font-size: 0.9rem;
+            margin: 1rem 0;
         }
-        .status {
-            padding: 10px;
-            margin: 10px 0;
-            border-radius: 5px;
+        #status {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1rem;
         }
-        .success { background: #d4edda; color: #155724; }
-        .error { background: #f8d7da; color: #721c24; }
-        .info { background: #d4e2ff; color: #0c5aa6; }
+        .success { background-color: #d4edda; color: var(--success-color); }
+        .error { background-color: #f8d7da; color: var(--error-color); }
+        .info { background-color: #cce5ff; color: var(--primary-color); }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🧪 Vercel-Streamlit Data Flow Test</h1>
-        <p>This test shows exactly what data flows between Vercel and Streamlit.</p>
-        
-        <button onclick="testDirectVercel()">📡 Test Direct Vercel Service</button>
-        <button onclick="testSimulateStreamlit()">🔧 Simulate Streamlit Integration</button>
-        <button onclick="clearLog()">🗑️ Clear Log</button>
-        
-        <div id="status" class="status info">Click a button to start testing...</div>
-        
-        <h3>📋 Communication Log:</h3>
-        <div id="log" class="log"></div>
-        
-        <h3>📊 Last Received Data:</h3>
-        <pre id="dataDisplay" style="background: #f8f9fa; padding: 10px; border-radius: 5px;">No data yet...</pre>
+        <h1>Geolocation Service Data Flow Test</h1>
+        <p>Use this page to test the data communication from the <code>geolocation.html</code> service.</p>
+        <div class="controls">
+            <button onclick="startTest()">▶️ Start Test</button>
+            <button onclick="clearLog()">Clear Log</button>
+        </div>
+        <div id="status" class="info">Ready to start the test.</div>
+        <h2>Communication Log</h2>
+        <div id="log"></div>
+        <h2>Last Received Data</h2>
+        <pre id="dataDisplay">No data received yet.</pre>
     </div>
 
     <script>
-        function log(message) {
-            const logDiv = document.getElementById('log');
+        const logEl = document.getElementById('log');
+        const statusEl = document.getElementById('status');
+        const dataDisplayEl = document.getElementById('dataDisplay');
+        let testIframe = null;
+
+        const log = (message) => {
             const timestamp = new Date().toLocaleTimeString();
-            logDiv.innerHTML += `[${timestamp}] ${message}\n`;
-            logDiv.scrollTop = logDiv.scrollHeight;
-        }
-        
-        function setStatus(message, type = 'info') {
-            const statusDiv = document.getElementById('status');
-            statusDiv.className = `status ${type}`;
-            statusDiv.textContent = message;
-        }
-        
-        function clearLog() {
-            document.getElementById('log').innerHTML = '';
-            document.getElementById('dataDisplay').textContent = 'No data yet...';
-        }
-        
-        function testDirectVercel() {
-            log('🚀 Starting direct Vercel service test...');
-            setStatus('Testing direct connection to Vercel...', 'info');
-            
-            const iframe = document.createElement('iframe');
-            iframe.src = 'https://geolocation-page.vercel.app';
-            iframe.style.display = 'none';
-            
-            let messageCount = 0;
-            let resolved = false;
-            
-            const messageHandler = (event) => {
-                messageCount++;
-                log(`📨 Message ${messageCount} from: ${event.origin}`);
-                log(`📍 Data type: ${typeof event.data}`);
-                log(`📍 Data content: ${JSON.stringify(event.data, null, 2)}`);
-                
-                if (event.origin === 'https://geolocation-page.vercel.app' && !resolved) {
-                    resolved = true;
-                    log('✅ VALID message from Vercel!');
-                    
-                    // Display the data
-                    document.getElementById('dataDisplay').textContent = JSON.stringify(event.data, null, 2);
-                    
-                    if (event.data && event.data.latitude && event.data.longitude) {
-                        setStatus(`✅ Success! Got location: ${event.data.latitude}, ${event.data.longitude}`, 'success');
-                        log(`🎯 Location detected: ${event.data.latitude}, ${event.data.longitude}`);
-                        log(`🎯 Accuracy: ±${event.data.accuracy}m`);
-                    } else if (event.data && event.data.error) {
-                        setStatus(`❌ GPS Error: ${event.data.error}`, 'error');
-                        log(`❌ Error: ${event.data.error}`);
-                    } else {
-                        setStatus('⚠️ Unexpected data format received', 'error');
-                        log('⚠️ Unexpected data format');
-                    }
-                    
-                    // Cleanup
-                    window.removeEventListener('message', messageHandler);
-                    if (document.body.contains(iframe)) {
-                        document.body.removeChild(iframe);
-                    }
-                }
-            };
-            
-            window.addEventListener('message', messageHandler);
-            document.body.appendChild(iframe);
-            log('📱 Iframe added, waiting for response...');
-            
-            // Timeout
+            logEl.innerHTML += `<div>[${timestamp}] ${message}</div>`;
+            logEl.scrollTop = logEl.scrollHeight;
+        };
+
+        const setStatus = (message, type) => {
+            statusEl.className = `status ${type}`;
+            statusEl.textContent = message;
+        };
+
+        const clearLog = () => {
+            logEl.innerHTML = '';
+            dataDisplayEl.textContent = 'No data received yet.';
+            setStatus('Log cleared. Ready for a new test.', 'info');
+        };
+
+        const handleMessage = (event) => {
+            // For this test, we are only interested in messages from our local iframe.
+            // In a real scenario, you might check event.origin for security.
+            log(`Received message: <pre>${JSON.stringify(event.data, null, 2)}</pre>`);
+            dataDisplayEl.textContent = JSON.stringify(event.data, null, 2);
+
+            if (event.data.error) {
+                setStatus(`❌ Test Failed: ${event.data.error}`, 'error');
+            } else if (event.data.latitude) {
+                setStatus(`✅ Test Successful: Received coordinates.`, 'success');
+            }
+            cleanup();
+        };
+
+        const cleanup = () => {
+            window.removeEventListener('message', handleMessage);
+            if (testIframe && document.body.contains(testIframe)) {
+                document.body.removeChild(testIframe);
+                testIframe = null;
+            }
+            log('Test finished and iframe removed.');
+        };
+
+        const startTest = () => {
+            clearLog();
+            log('Starting test...');
+            setStatus('Requesting location from geolocation.html... (max 15s)', 'info');
+
+            testIframe = document.createElement('iframe');
+            testIframe.src = 'geolocation.html';
+            testIframe.style.display = 'none';
+            document.body.appendChild(testIframe);
+
+            window.addEventListener('message', handleMessage);
+
             setTimeout(() => {
-                if (!resolved) {
-                    log(`⏰ Timeout after 30 seconds. Messages received: ${messageCount}`);
-                    setStatus('⏰ Timeout - no response from Vercel service', 'error');
-                    window.removeEventListener('message', messageHandler);
-                    if (document.body.contains(iframe)) {
-                        document.body.removeChild(iframe);
-                    }
+                if (testIframe) { // If iframe still exists, it means no message was received
+                    log('Test timed out. No message received from iframe.');
+                    setStatus('❌ Test Failed: Timeout.', 'error');
+                    cleanup();
                 }
-            }, 30000);
-        }
-        
-        function testSimulateStreamlit() {
-            log('🔧 Simulating Streamlit st_javascript integration...');
-            setStatus('Simulating how Streamlit would receive this data...', 'info');
-            
-            // This simulates exactly what Streamlit does
-            testDirectVercel();
-        }
-        
-        // Auto-clear log on page load
-        clearLog();
-        log('🔍 Test page loaded. Ready to test Vercel-Streamlit data flow.');
+            }, 16000); // Slightly longer than the iframe's timeout
+        };
+
+        window.addEventListener('load', () => log('Page loaded.'));
     </script>
 </body>
 </html>

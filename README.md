@@ -34,7 +34,6 @@ pip install -r requirements.txt
 
 3. **Run the application**
    ```bash
-   cd "Merai v1"
    streamlit run main.py
    ```
 

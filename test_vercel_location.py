@@ -1,47 +1,46 @@
 #!/usr/bin/env python3
 """
-Test script to verify the Vercel geolocation service is working properly.
-This simulates what the main app does to get location data.
+Test script for the geolocation.html service.
+
+This script starts a simple Python HTTP server to host the local 
+`geolocation.html` file and then opens it in a web browser. This allows for 
+easy local testing of the geolocation functionality without needing to deploy it.
 
 Usage: python test_vercel_location.py
 """
 
-import time
+import http.server
+import socketserver
 import webbrowser
+import os
 
-def test_vercel_service():
-    """Test the Vercel geolocation service in a browser."""
-    print("🧪 Testing Vercel Geolocation Service")
-    print("=" * 50)
-    
-    vercel_url = "https://geolocation-page.vercel.app/"
-    local_file = "geolocation.html"
-    
-    print(f"🌐 Testing Vercel service: {vercel_url}")
-    print("📱 This will open the service in your browser...")
-    print("💡 You should see location coordinates if GPS is working")
-    print("\n⏳ Opening browser in 3 seconds...")
-    
-    for i in range(3, 0, -1):
-        print(f"   {i}...")
-        time.sleep(1)
-    
-    # Open Vercel service
-    webbrowser.open(vercel_url)
-    
-    print(f"\n🔧 You can also test the local file: {local_file}")
-    print("📝 Instructions:")
-    print("   1. Allow location access when prompted")
-    print("   2. You should see your coordinates")
-    print("   3. If it works, the main app will work too!")
-    
-    print(f"\n🚀 To deploy your own version:")
-    print("   1. Go to vercel.com")
-    print("   2. Upload the geolocation.html file")
-    print("   3. Update the URL in main.py if needed")
-    
-    print(f"\n✅ If you see coordinates, the Vercel logic is working!")
-    print(f"❌ If you see errors, check browser permissions or try a different browser")
+PORT = 8000
+FILENAME = "geolocation.html"
+
+def run_test():
+    """Starts a local server and opens the geolocation test page."""
+    if not os.path.exists(FILENAME):
+        print(f"Error: {FILENAME} not found in the current directory.")
+        return
+
+    Handler = http.server.SimpleHTTPRequestHandler
+
+    with socketserver.TCPServer(("", PORT), Handler) as httpd:
+        print(f"✅ Local test server running at http://localhost:{PORT}/")
+        print(f"🚀 Opening {FILENAME} in your browser...")
+        
+        webbrowser.open_new_tab(f"http://localhost:{PORT}/{FILENAME}")
+        
+        print("\n--- Instructions ---")
+        print("1. Your browser should ask for location permission. Click 'Allow'.")
+        print("2. The page should display your coordinates if successful.")
+        print("3. If it works here, it will work in the main Streamlit app.")
+        print("4. Press Ctrl+C in this terminal to stop the server.")
+
+        try:
+            httpd.serve_forever()
+        except KeyboardInterrupt:
+            print("\n🛑 Server stopped.")
 
 if __name__ == "__main__":
-    test_vercel_service()
+    run_test()

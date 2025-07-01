@@ -3,244 +3,152 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GPS Location Service</title>
+    <title>Geolocation Service</title>
     <style>
+        :root {
+            --primary-bg: #1a2a45;
+            --secondary-bg: #2a4a65;
+            --text-color: #f0f8ff;
+            --success-color: #28a745;
+            --error-color: #dc3545;
+            --loader-color: #007bff;
+        }
         body {
-            font-family: Arial, sans-serif;
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-            color: white;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: var(--primary-bg);
+            color: var(--text-color);
             margin: 0;
-            padding: 20px;
-            min-height: 100vh;
+            padding: 1rem;
             display: flex;
-            flex-direction: column;
             justify-content: center;
             align-items: center;
-        }
-        
-        .container {
+            min-height: 100vh;
             text-align: center;
-            max-width: 500px;
-            padding: 30px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 15px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
         }
-        
-        .status {
-            font-size: 1.2em;
-            margin: 20px 0;
+        .container {
+            max-width: 400px;
+            padding: 2rem;
+            background: var(--secondary-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
         }
-        
-        .loading {
-            display: inline-block;
+        h1 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        #status {
+            font-size: 1.1rem;
+            margin: 1.5rem 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        .loader {
             width: 20px;
             height: 20px;
-            border: 3px solid rgba(255, 255, 255, 0.3);
+            border: 3px solid rgba(0, 123, 255, 0.3);
+            border-top-color: var(--loader-color);
             border-radius: 50%;
-            border-top-color: #fff;
-            animation: spin 1s ease-in-out infinite;
+            animation: spin 1s linear infinite;
         }
-        
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
-        
-        .success {
-            color: #4CAF50;
-        }
-        
-        .error {
-            color: #f44336;
-        }
-        
-        .retry-btn {
-            background: #4CAF50;
+        .success { color: var(--success-color); }
+        .error { color: var(--error-color); }
+        #retryBtn {
+            background-color: var(--loader-color);
             color: white;
             border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
             cursor: pointer;
-            font-size: 1em;
-            margin-top: 15px;
+            font-size: 1rem;
+            display: none; /* Hidden by default */
         }
-        
-        .retry-btn:hover {
-            background: #45a049;
+        #details {
+            font-size: 0.9rem;
+            opacity: 0.8;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🌍 GPS Location Service</h1>
-        <div id="status" class="status">
-            <div class="loading"></div>
-            Requesting your location...
-        </div>
+        <h1>🌍 Geolocation Service</h1>
+        <div id="status"><div class="loader"></div>Requesting location...</div>
         <div id="details"></div>
-        <button id="retryBtn" class="retry-btn" style="display: none;" onclick="requestLocation()">
-            🔄 Try Again
-        </button>
+        <button id="retryBtn" onclick="requestLocation()">Try Again</button>
     </div>
 
     <script>
-        let locationRequested = false;
-        
-        function updateStatus(message, type = 'info') {
-            const statusDiv = document.getElementById('status');
-            const detailsDiv = document.getElementById('details');
-            
-            if (type === 'loading') {
-                statusDiv.innerHTML = `<div class="loading"></div> ${message}`;
-            } else if (type === 'success') {
-                statusDiv.innerHTML = `✅ ${message}`;
-                statusDiv.className = 'status success';
-            } else if (type === 'error') {
-                statusDiv.innerHTML = `❌ ${message}`;
-                statusDiv.className = 'status error';
-                document.getElementById('retryBtn').style.display = 'inline-block';
-            } else {
-                statusDiv.innerHTML = message;
-            }
-        }
-        
-        function sendLocationToParent(data) {
-            // Send location data to parent window via postMessage
+        const statusEl = document.getElementById('status');
+        const detailsEl = document.getElementById('details');
+        const retryBtn = document.getElementById('retryBtn');
+        let isRequesting = false;
+
+        const updateUI = (state, message, details = '') => {
+            statusEl.className = state;
+            statusEl.innerHTML = message;
+            detailsEl.innerHTML = details;
+            retryBtn.style.display = (state === 'error') ? 'block' : 'none';
+        };
+
+        const postMessageToParent = (data) => {
+            // Allow all origins for flexibility, but in production, this should be restricted.
+            const targetOrigin = '*'; 
             if (window.parent && window.parent !== window) {
-                console.log('📤 Sending location data to parent:', data);
-                window.parent.postMessage(data, '*');
-            } else {
-                console.log('📍 Location data (for standalone testing):', data);
+                window.parent.postMessage(data, targetOrigin);
             }
-        }
-        
-        function requestLocation() {
-            if (locationRequested) {
-                console.log('⚠️ Location already requested, skipping...');
-                return;
-            }
+        };
+
+        const handleSuccess = (position) => {
+            const { latitude, longitude, accuracy } = position.coords;
+            const locationData = { latitude, longitude, accuracy: Math.round(accuracy) };
             
-            locationRequested = true;
-            document.getElementById('retryBtn').style.display = 'none';
-            
-            updateStatus('Checking GPS availability...', 'loading');
-            
-            // Check if geolocation is supported
-            if (!navigator.geolocation) {
-                const errorData = {
-                    error: 'Geolocation not supported by this browser',
-                    timestamp: new Date().toISOString()
-                };
-                updateStatus('GPS not supported by your browser', 'error');
-                sendLocationToParent(errorData);
-                return;
-            }
-            
-            updateStatus('Requesting GPS permission...', 'loading');
-            document.getElementById('details').innerHTML = 
-                '<small>Please allow location access when prompted by your browser</small>';
-            
-            // Set up geolocation options
-            const options = {
-                enableHighAccuracy: true,  // Use GPS if available
-                timeout: 20000,           // 20 second timeout
-                maximumAge: 300000        // Accept location up to 5 minutes old
+            updateUI('success', '✅ Location Found!', `Lat: ${latitude.toFixed(4)}, Lon: ${longitude.toFixed(4)}`);
+            postMessageToParent(locationData);
+            isRequesting = false;
+        };
+
+        const handleError = (error) => {
+            const messages = {
+                [error.PERMISSION_DENIED]: "Permission denied. Please enable location services.",
+                [error.POSITION_UNAVAILABLE]: "Location unavailable. Check network or GPS.",
+                [error.TIMEOUT]: "Request timed out. Please try again."
             };
+            const errorMessage = messages[error.code] || "An unknown error occurred.";
             
-            // Request location
-            navigator.geolocation.getCurrentPosition(
-                // Success callback
-                function(position) {
-                    const locationData = {
-                        latitude: position.coords.latitude,
-                        longitude: position.coords.longitude,
-                        accuracy: Math.round(position.coords.accuracy),
-                        timestamp: new Date().toISOString(),
-                        altitude: position.coords.altitude,
-                        heading: position.coords.heading,
-                        speed: position.coords.speed
-                    };
-                    
-                    console.log('✅ GPS location obtained:', locationData);
-                    
-                    updateStatus('Location obtained successfully!', 'success');
-                    document.getElementById('details').innerHTML = `
-                        <small>
-                            📍 Lat: ${locationData.latitude.toFixed(6)}<br>
-                            📍 Lon: ${locationData.longitude.toFixed(6)}<br>
-                            🎯 Accuracy: ±${locationData.accuracy}m
-                        </small>
-                    `;
-                    
-                    // Send location data to parent
-                    sendLocationToParent(locationData);
-                },
-                
-                // Error callback
-                function(error) {
-                    let errorMessage = 'Unknown location error';
-                    let userFriendlyMessage = 'Could not get your location';
-                    
-                    switch(error.code) {
-                        case error.PERMISSION_DENIED:
-                            errorMessage = 'Location access denied by user';
-                            userFriendlyMessage = 'Location access denied. Please allow location access and try again.';
-                            break;
-                        case error.POSITION_UNAVAILABLE:
-                            errorMessage = 'Location information unavailable';
-                            userFriendlyMessage = 'Location information unavailable. Check GPS/WiFi settings.';
-                            break;
-                        case error.TIMEOUT:
-                            errorMessage = 'Location request timeout';
-                            userFriendlyMessage = 'Location request timed out. Please try again.';
-                            break;
-                    }
-                    
-                    console.log('❌ Geolocation error:', errorMessage);
-                    
-                    const errorData = {
-                        error: errorMessage,
-                        code: error.code,
-                        timestamp: new Date().toISOString()
-                    };
-                    
-                    updateStatus(userFriendlyMessage, 'error');
-                    document.getElementById('details').innerHTML = 
-                        `<small>Error code: ${error.code}</small>`;
-                    
-                    // Send error data to parent
-                    sendLocationToParent(errorData);
-                    
-                    // Reset flag to allow retry
-                    locationRequested = false;
-                },
-                
-                // Options
-                options
-            );
-        }
-        
-        // Auto-start location request when page loads
-        window.addEventListener('load', function() {
-            console.log('🚀 GPS Location Service starting...');
-            // Small delay to ensure iframe is fully loaded
-            setTimeout(requestLocation, 1000);
-        });
-        
-        // Also handle postMessage requests from parent
-        window.addEventListener('message', function(event) {
-            console.log('📨 Received message from parent:', event.data);
-            if (event.data === 'requestLocation') {
-                locationRequested = false; // Reset flag
-                requestLocation();
+            updateUI('error', `❌ ${errorMessage}`);
+            postMessageToParent({ error: errorMessage, code: error.code });
+            isRequesting = false;
+        };
+
+        const requestLocation = () => {
+            if (isRequesting) return;
+            isRequesting = true;
+
+            updateUI('loading', '<div class="loader"></div>Requesting location...', 'Please grant permission when prompted.');
+
+            if (!navigator.geolocation) {
+                handleError({ code: 0, message: "Geolocation is not supported by this browser." });
+                return;
             }
-        });
-        
-        // Handle page visibility change (for mobile browsers)
-        document.addEventListener('visibilitychange', function() {
-            if (!document.hidden && !locationRequested) {
-                console.log('📱 Page became visible, requesting location...');
-                setTimeout(requestLocation, 500);
+
+            navigator.geolocation.getCurrentPosition(handleSuccess, handleError, {
+                enableHighAccuracy: true,
+                timeout: 15000, // 15 seconds
+                maximumAge: 0 // Force a fresh location
+            });
+        };
+
+        // Automatically request location on load.
+        window.addEventListener('load', requestLocation);
+
+        // Listen for retry requests from the parent application.
+        window.addEventListener('message', (event) => {
+            if (event.data === 'requestLocation') {
+                requestLocation();
             }
         });
     </script>
