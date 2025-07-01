@@ -386,41 +386,257 @@ ERROR:
                 st.rerun()
     
     def render_location_section(self):
-        """Render the location selection section of the app."""
-        st.header("📍 Location")
+        """Render the location selection section of the app with enhanced UI."""
+        # Enhanced header with custom styling
+        st.markdown("""
+            <div style="text-align: center; margin-bottom: 2rem;">
+                <h1 style="color: #ffd700; font-size: 3rem; margin-bottom: 0.5rem;">📍 Set Your Location</h1>
+                <p style="color: #b0b0b0; font-size: 1.2rem; margin-bottom: 1rem;">
+                    Choose your observation point to discover the cosmos above you
+                </p>
+            </div>
+        """, unsafe_allow_html=True)
         
-        # Let user choose between automatic detection or manual selection
-        location_option = st.radio(
-            "Choose how to set your location:",
-            ("Detect my location", "Select on map"),
-            key='location_choice',
-            horizontal=True,
-            help="GPS detection is more accurate but requires permission. Map selection always works."
-        )
-        
-        # Handle the selected option
-        if st.session_state.location_choice == "Detect my location":
-            self.handle_location_detection()
-        else:
-            self.handle_map_selection()
-        
-        # Show current location information if available
+        # Show current location status with enhanced styling
         if st.session_state.address not in ["Not set", "Automatic Detection Failed"]:
+            # Create a beautiful status card
             if "GPS Location" in st.session_state.address:
-                st.success("🎯 **HIGH PRECISION GPS Location** 🛰️")
-                col1, col2 = st.columns(2)
+                st.markdown("""
+                    <div style="
+                        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+                        border: 2px solid #4CAF50;
+                        border-radius: 15px;
+                        padding: 1.5rem;
+                        margin-bottom: 2rem;
+                        box-shadow: 0 8px 32px rgba(76, 175, 80, 0.3);
+                    ">
+                        <div style="text-align: center;">
+                            <h3 style="color: #4CAF50; margin-bottom: 1rem;">🛰️ HIGH PRECISION GPS LOCATION</h3>
+                        </div>
+                    </div>
+                """, unsafe_allow_html=True)
+                
+                # Show coordinates in elegant metric cards
+                col1, col2, col3 = st.columns(3)
                 with col1:
-                    st.metric("📍 Latitude", f"{st.session_state.latitude:.6f}")
+                    st.metric(
+                        "🌍 Latitude", 
+                        f"{st.session_state.latitude:.6f}°",
+                        help="Your GPS latitude coordinate"
+                    )
                 with col2:
-                    st.metric("📍 Longitude", f"{st.session_state.longitude:.6f}")
-                st.success(f"🎯 {st.session_state.address}")
-                st.info("✨ **Perfect!** You're using the most accurate location method")
+                    st.metric(
+                        "🌍 Longitude", 
+                        f"{st.session_state.longitude:.6f}°",
+                        help="Your GPS longitude coordinate"
+                    )
+                with col3:
+                    accuracy_text = st.session_state.address.split('±')[-1] if '±' in st.session_state.address else "High"
+                    st.metric(
+                        "🎯 Accuracy", 
+                        accuracy_text,
+                        help="GPS positioning accuracy"
+                    )
+                
+                st.success(f"✨ **Perfect!** Using the most accurate location method: {st.session_state.address}")
+                
             else:
                 # Manual or other location selection
-                st.success(
-                    f"📍 **Current Location:** {st.session_state.address} "
-                    f"({st.session_state.latitude:.4f}, {st.session_state.longitude:.4f})"
-                )
+                st.markdown("""
+                    <div style="
+                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                        border: 2px solid #FFC107;
+                        border-radius: 15px;
+                        padding: 1.5rem;
+                        margin-bottom: 2rem;
+                        box-shadow: 0 8px 32px rgba(255, 193, 7, 0.3);
+                    ">
+                        <div style="text-align: center;">
+                            <h3 style="color: #FFC107; margin-bottom: 1rem;">🗺️ MANUAL LOCATION SELECTED</h3>
+                        </div>
+                    </div>
+                """, unsafe_allow_html=True)
+                
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.metric(
+                        "📍 Latitude", 
+                        f"{st.session_state.latitude:.4f}°",
+                        help="Your selected latitude coordinate"
+                    )
+                with col2:
+                    st.metric(
+                        "📍 Longitude", 
+                        f"{st.session_state.longitude:.4f}°",
+                        help="Your selected longitude coordinate"
+                    )
+                
+                st.info(f"📍 **Current Location:** {st.session_state.address}")
+            
+            # Add refresh option with better styling
+            st.markdown("---")
+            col1, col2, col3 = st.columns([1, 1, 1])
+            with col2:
+                if st.button("🔄 Change Location", type="secondary", use_container_width=True):
+                    st.session_state.location_detected = False
+                    st.rerun()
+        
+        else:
+            # Location not set - show selection options with enhanced UI
+            st.markdown("""
+                <div style="
+                    background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+                    border: 2px solid #FF5722;
+                    border-radius: 15px;
+                    padding: 1.5rem;
+                    margin-bottom: 2rem;
+                    text-align: center;
+                    box-shadow: 0 8px 32px rgba(255, 87, 34, 0.3);
+                ">
+                    <h3 style="color: #FF5722; margin-bottom: 0.5rem;">⚠️ Location Required</h3>
+                    <p style="color: #333; margin-bottom: 0;">Please set your location to see astronomical objects</p>
+                </div>
+            """, unsafe_allow_html=True)
+        
+        # Enhanced location method selection
+        st.markdown("### � Choose Your Location Method")
+        
+        # Create method selection with custom styling
+        method_col1, method_col2 = st.columns(2)
+        
+        with method_col1:
+            st.markdown("""
+                <div style="
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    border-radius: 12px;
+                    padding: 1rem;
+                    margin-bottom: 1rem;
+                    text-align: center;
+                    border: 2px solid transparent;
+                ">
+                    <h4 style="color: white; margin-bottom: 0.5rem;">�️ GPS Detection</h4>
+                    <p style="color: #e0e0e0; font-size: 0.9rem; margin-bottom: 0;">
+                        Most accurate • Requires permission
+                    </p>
+                </div>
+            """, unsafe_allow_html=True)
+        
+        with method_col2:
+            st.markdown("""
+                <div style="
+                    background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+                    border-radius: 12px;
+                    padding: 1rem;
+                    margin-bottom: 1rem;
+                    text-align: center;
+                    border: 2px solid transparent;
+                ">
+                    <h4 style="color: #333; margin-bottom: 0.5rem;">🗺️ Map Selection</h4>
+                    <p style="color: #666; font-size: 0.9rem; margin-bottom: 0;">
+                        Interactive • Always works
+                    </p>
+                </div>
+            """, unsafe_allow_html=True)
+        
+        # Radio button selection with better styling
+        location_option = st.radio(
+            "",  # Empty label since we have custom headers above
+            ("🛰️ Detect my location (GPS)", "🗺️ Select on map (Manual)"),
+            key='location_choice_enhanced',
+            horizontal=True,
+            help="GPS detection provides the most accurate coordinates, while map selection always works and gives you full control."
+        )
+        
+        # Update session state based on selection
+        if "GPS" in location_option:
+            st.session_state.location_choice = "Detect my location"
+        else:
+            st.session_state.location_choice = "Select on map"
+        
+        # Add some spacing
+        st.markdown("<br>", unsafe_allow_html=True)
+        
+        # Handle the selected option with enhanced feedback
+        if st.session_state.location_choice == "Detect my location":
+            # GPS Detection Section
+            st.markdown("""
+                <div style="
+                    background: rgba(26, 35, 126, 0.1);
+                    border-left: 4px solid #1976D2;
+                    border-radius: 8px;
+                    padding: 1rem;
+                    margin-bottom: 1rem;
+                ">
+                    <h4 style="color: #1976D2; margin-bottom: 0.5rem;">🛰️ GPS Location Detection</h4>
+                    <p style="color: #666; margin-bottom: 0;">
+                        Click the button below to request your device's GPS coordinates. 
+                        This provides the most accurate location for astronomical calculations.
+                    </p>
+                </div>
+            """, unsafe_allow_html=True)
+            
+            self.handle_location_detection()
+            
+        else:
+            # Map Selection Section
+            st.markdown("""
+                <div style="
+                    background: rgba(255, 152, 0, 0.1);
+                    border-left: 4px solid #FF9800;
+                    border-radius: 8px;
+                    padding: 1rem;
+                    margin-bottom: 1rem;
+                ">
+                    <h4 style="color: #FF9800; margin-bottom: 0.5rem;">🗺️ Interactive Map Selection</h4>
+                    <p style="color: #666; margin-bottom: 0;">
+                        Click anywhere on the map below to set your observation location. 
+                        Perfect for planning observations or if GPS is not available.
+                    </p>
+                </div>
+            """, unsafe_allow_html=True)
+            
+            self.handle_map_selection()
+        
+        # Add helpful tips section
+        if st.session_state.address in ["Not set", "Automatic Detection Failed"]:
+            st.markdown("---")
+            st.markdown("### 💡 Tips for Best Results")
+            
+            tip_col1, tip_col2 = st.columns(2)
+            
+            with tip_col1:
+                st.markdown("""
+                    <div style="
+                        background: rgba(76, 175, 80, 0.1);
+                        border-radius: 8px;
+                        padding: 1rem;
+                    ">
+                        <h5 style="color: #4CAF50;">🛰️ For GPS Detection:</h5>
+                        <ul style="color: #666; font-size: 0.9rem;">
+                            <li>Allow location access when prompted</li>
+                            <li>Ensure location services are enabled</li>
+                            <li>Use HTTPS connection for security</li>
+                            <li>Wait a moment for accurate positioning</li>
+                        </ul>
+                    </div>
+                """, unsafe_allow_html=True)
+            
+            with tip_col2:
+                st.markdown("""
+                    <div style="
+                        background: rgba(255, 152, 0, 0.1);
+                        border-radius: 8px;
+                        padding: 1rem;
+                    ">
+                        <h5 style="color: #FF9800;">🗺️ For Map Selection:</h5>
+                        <ul style="color: #666; font-size: 0.9rem;">
+                            <li>Zoom in for more precise selection</li>
+                            <li>Click exactly where you want to observe</li>
+                            <li>Consider elevation and horizons</li>
+                            <li>Use landmarks for reference</li>
+                        </ul>
+                    </div>
+                """, unsafe_allow_html=True)
     
     def render_datetime_section(self):
         """Render the date and time selection section."""
