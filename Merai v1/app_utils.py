@@ -119,19 +119,38 @@ def _render_location_selection_view():
 def _render_gps_section():
     """Renders the UI for GPS and manual coordinate entry."""
     st.markdown("### 🛰️ GPS & Manual Entry")
-    if st.button("Get GPS Location"):
-        with st.spinner("Requesting GPS coordinates..."):
-            location_data = _get_gps_location()
-            if location_data and 'latitude' in location_data:
-                _apply_coordinates(location_data['latitude'], location_data['longitude'], "GPS")
-            else:
-                st.error("Could not retrieve GPS location. Please use manual entry or the map.")
-                st.info("If GPS fails, you can grant location permissions manually by visiting the link below, then try again:")
-                st.code("https://geolocation-page.vercel.app/")
+    
+    st.info("Click the button below to load the geolocation service. You may need to grant location permissions within the window that appears.")
+
+    if st.button("Start GPS Location Service"):
+        st.session_state.show_gps_iframe = True
+
+    if st.session_state.get('show_gps_iframe', False):
+        with st.spinner("Loading geolocation service..."):
+            components.iframe("https://geolocation-page.vercel.app/", height=400)
+        
+        st.warning("After granting permission, you must manually enter the coordinates below.")
+
+    # Listen for location data from the iframe
+    location_data = st_javascript("""
+        new Promise(resolve => {
+            const handler = event => {
+                if (event.origin === 'https://geolocation-page.vercel.app' && event.data.latitude) {
+                    window.removeEventListener('message', handler);
+                    resolve(event.data);
+                }
+            };
+            window.addEventListener('message', handler);
+        });
+    """, key="get_location_from_iframe")
+
+    if location_data and 'latitude' in location_data:
+        _apply_coordinates(location_data['latitude'], location_data['longitude'], "GPS")
+        st.session_state.show_gps_iframe = False # Hide iframe after success
 
     with st.form("manual_coords_form"):
-        lat = st.number_input("Latitude", -90.0, 90.0, format="%.6f")
-        lon = st.number_input("Longitude", -180.0, 180.0, format="%.6f")
+        lat = st.number_input("Latitude", -90.0, 90.0, format="%.6f", help="You can copy the latitude from the window above.")
+        lon = st.number_input("Longitude", -180.0, 180.0, format="%.6f", help="You can copy the longitude from the window above.")
         if st.form_submit_button("Apply Manual Coordinates"):
             if lat != 0.0 or lon != 0.0:
                 _apply_coordinates(lat, lon, "Manual Entry")
