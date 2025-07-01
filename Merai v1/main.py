@@ -89,7 +89,6 @@ class MeraiApp:
         """Initialize all session state variables with default values."""
         # Session state keeps track of user selections between app reruns
         defaults = {
-            'location_choice': "Detect my location",
             'latitude': 0.0,
             'longitude': 0.0,
             'address': "Not set",
@@ -104,6 +103,61 @@ class MeraiApp:
             if key not in st.session_state:
                 st.session_state[key] = default_value
     
+    def _apply_coordinates(self, lat, lon, source="Manual"):
+        """Apply coordinates to session state."""
+        st.session_state.latitude = float(lat)
+        st.session_state.longitude = float(lon)
+        st.session_state.address = f"{source} ({lat:.6f}, {lon:.6f})"
+        st.session_state.location_detected = True
+        st.success(f"🎯 {source} coordinates applied!")
+        st.rerun()
+
+    def render_gps_section(self):
+        """Render GPS detection with Vercel window and manual input."""
+        st.markdown("### 🛰️ GPS Location Detection")
+        
+        # Vercel Window and Manual Entry Side by Side
+        col1, col2 = st.columns([1, 1])
+        
+        with col1:
+            st.markdown("**🌐 Vercel GPS Service:**")
+            import streamlit.components.v1 as components
+            components.iframe(
+                "https://geolocation-page.vercel.app",
+                width=400,
+                height=300,
+                scrolling=True
+            )
+        
+        with col2:
+            st.markdown("**📍 Coordinate Entry:**")
+            
+            manual_lat = st.number_input(
+                "Latitude",
+                min_value=-90.0,
+                max_value=90.0,
+                value=st.session_state.get('latitude', 0.0),
+                step=0.000001,
+                format="%.6f",
+                key="manual_lat"
+            )
+            
+            manual_lon = st.number_input(
+                "Longitude", 
+                min_value=-180.0,
+                max_value=180.0,
+                value=st.session_state.get('longitude', 0.0),
+                step=0.000001,
+                format="%.6f",
+                key="manual_lon"
+            )
+            
+            if st.button("🚀 Apply Coordinates", type="primary"):
+                if manual_lat != 0.0 or manual_lon != 0.0:
+                    self._apply_coordinates(manual_lat, manual_lon, "Manual Entry")
+                else:
+                    st.warning("⚠️ Enter valid coordinates")
+
     def handle_location_detection(self):
         """
         Handle automatic location detection using only GPS service.
@@ -295,10 +349,7 @@ class MeraiApp:
             # Update location if user clicked on a different spot
             if (st.session_state.latitude != clicked_lat or 
                 st.session_state.longitude != clicked_lon):
-                st.session_state.latitude = clicked_lat
-                st.session_state.longitude = clicked_lon
-                st.session_state.address = f"Map Selected: ({clicked_lat:.2f}, {clicked_lon:.2f})"
-                st.rerun()
+                self._apply_coordinates(clicked_lat, clicked_lon, "Map Selected")
     
     def render_location_section(self):
         """Render the location selection section of the app."""
@@ -307,29 +358,28 @@ class MeraiApp:
         # Let user choose between automatic detection or manual selection
         location_option = st.radio(
             "Choose how to set your location:",
-            ("Detect my location", "Select on map"),
+            ("GPS and Manual Entry", "Select on map"),
             key='location_choice',
             horizontal=True,
             help="GPS detection is more accurate but requires permission. Map selection always works."
         )
         
         # Handle the selected option
-        if st.session_state.location_choice == "Detect my location":
-            self.handle_location_detection()
+        if st.session_state.location_choice == "GPS and Manual Entry":
+            self.render_gps_section()
         else:
             self.handle_map_selection()
         
         # Show current location information if available
-        if st.session_state.address not in ["Not set", "Automatic Detection Failed"]:
-            if "GPS Location" in st.session_state.address:
-                st.success("🎯 **HIGH PRECISION GPS Location** 🛰️")
+        if st.session_state.location_detected:
+            if "GPS Location" in st.session_state.address or "Manual Entry" in st.session_state.address or "Map Selected" in st.session_state.address:
+                st.success("🎯 **Location Set**")
                 col1, col2 = st.columns(2)
                 with col1:
                     st.metric("📍 Latitude", f"{st.session_state.latitude:.6f}")
                 with col2:
                     st.metric("📍 Longitude", f"{st.session_state.longitude:.6f}")
                 st.success(f"🎯 {st.session_state.address}")
-                st.info("✨ **Perfect!** You're using the most accurate location method")
             else:
                 # Manual or other location selection
                 st.success(
