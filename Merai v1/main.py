@@ -117,10 +117,14 @@ class MeraiApp:
         st.markdown("### 🛰️ GPS Location Detection")
         
         # Vercel Window and Manual Entry Side by Side
-        col1, col2 = st.columns([1, 1])
+        col1, col2 = st.columns([1.1, 1])
         
         with col1:
             st.markdown("**🌐 Vercel GPS Service:**")
+            st.markdown(
+                '<div style="border-radius: 10px; overflow: hidden; margin-right: 20px;">', 
+                unsafe_allow_html=True
+            )
             import streamlit.components.v1 as components
             components.iframe(
                 "https://geolocation-page.vercel.app",
@@ -128,8 +132,10 @@ class MeraiApp:
                 height=300,
                 scrolling=True
             )
-        
+            st.markdown('</div>', unsafe_allow_html=True)
+
         with col2:
+            st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
             st.markdown("**📍 Coordinate Entry:**")
             
             manual_lat = st.number_input(
@@ -152,6 +158,7 @@ class MeraiApp:
                 key="manual_lon"
             )
             
+            st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
             if st.button("🚀 Apply Coordinates", type="primary"):
                 if manual_lat != 0.0 or manual_lon != 0.0:
                     self._apply_coordinates(manual_lat, manual_lon, "Manual Entry")
