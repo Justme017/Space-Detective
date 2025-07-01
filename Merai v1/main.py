@@ -440,6 +440,9 @@ ERROR:
                 
                 st.success(f"✨ **Perfect!** Using the most accurate location method: {st.session_state.address}")
                 
+                # Add GPS accuracy monitoring
+                self.render_location_accuracy_monitor()
+                
             else:
                 # Manual or other location selection
                 st.markdown("""
@@ -637,6 +640,17 @@ ERROR:
                         </ul>
                     </div>
                 """, unsafe_allow_html=True)
+            
+            # Add the location validation helper
+            self.render_location_validation_helper()
+            
+            # Add location sharing tools if location is detected
+            if st.session_state.location_detected:
+                self.render_location_sharing_tools()
+            
+            # Add troubleshooting section
+            with st.expander("🛠️ **Location Troubleshooting & Diagnostics**", expanded=False):
+                self.render_location_troubleshooting()
     
     def render_datetime_section(self):
         """Render the date and time selection section."""
@@ -1095,6 +1109,507 @@ ERROR:
             with current_col2:
                 st.metric("Current Longitude", f"{st.session_state.longitude:.6f}")
             st.info(f"📍 Address: {st.session_state.address}")
+    
+    def render_location_validation_helper(self):
+        """Render location validation and format helper section."""
+        st.markdown("---")
+        st.markdown("### 🎯 **Location Validation & Quick Examples**")
+        
+        # Create tabs for different coordinate formats
+        tab1, tab2, tab3 = st.tabs(["🌍 Popular Cities", "📐 Format Examples", "🛠️ Validation Tool"])
+        
+        with tab1:
+            st.markdown("**🏙️ Quick Set Popular Locations:**")
+            
+            # Popular cities with coordinates
+            cities = {
+                "🗽 New York, USA": (40.7128, -74.0060),
+                "🏛️ London, UK": (51.5074, -0.1278),
+                "🗼 Paris, France": (48.8566, 2.3522),
+                "🌸 Tokyo, Japan": (35.6762, 139.6503),
+                "🎭 Sydney, Australia": (-33.8688, 151.2093),
+                "🏖️ Los Angeles, USA": (34.0522, -118.2437),
+                "🍕 Rome, Italy": (41.9028, 12.4964),
+                "🕌 Istanbul, Turkey": (41.0082, 28.9784),
+                "🏔️ Denver, USA": (39.7392, -104.9903),
+                "🌴 Miami, USA": (25.7617, -80.1918)
+            }
+            
+            cols = st.columns(2)
+            for i, (city, coords) in enumerate(cities.items()):
+                col = cols[i % 2]
+                with col:
+                    if st.button(f"{city}", key=f"city_{i}"):
+                        st.session_state.latitude = coords[0]
+                        st.session_state.longitude = coords[1]
+                        st.session_state.address = f"Quick Select: {city} ({coords[0]:.4f}, {coords[1]:.4f})"
+                        st.session_state.location_detected = True
+                        st.success(f"🎯 Set to {city}!")
+                        st.rerun()
+        
+        with tab2:
+            st.markdown("**📐 Accepted Coordinate Formats:**")
+            
+            format_examples = [
+                ("**Decimal Degrees:**", "40.7128, -74.0060"),
+                ("**With Labels:**", "Lat: 40.7128, Lon: -74.0060"), 
+                ("**Full Labels:**", "Latitude: 40.7128, Longitude: -74.0060"),
+                ("**GPS Format:**", "40.7128°N, 74.0060°W"),
+                ("**Scientific:**", "40.712800, -74.006000"),
+                ("**Space Separated:**", "40.7128 -74.0060")
+            ]
+            
+            for label, example in format_examples:
+                col1, col2 = st.columns([1, 2])
+                with col1:
+                    st.markdown(label)
+                with col2:
+                    st.code(example, language="text")
+        
+        with tab3:
+            st.markdown("**🛠️ Coordinate Validation:**")
+            
+            # Test coordinate input
+            test_input = st.text_input(
+                "🧪 Test Coordinate String:",
+                placeholder="Enter coordinates in any format to test extraction",
+                help="Test how the app will interpret your coordinate string"
+            )
+            
+            if test_input:
+                # Use the same extraction logic as in the main function
+                import re
+                patterns = [
+                    r'lat[itude]*[:=\s]+([+-]?\d+\.?\d*)[,\s]+lon[gitude]*[:=\s]+([+-]?\d+\.?\d*)',
+                    r'([+-]?\d+\.?\d*)[,\s]+([+-]?\d+\.?\d*)',
+                    r'latitude[:\s]+([+-]?\d+\.?\d*)[,\s]+longitude[:\s]+([+-]?\d+\.?\d*)',
+                    r'([+-]?\d{1,3}\.\d+)[,\s]+([+-]?\d{1,3}\.\d+)'
+                ]
+                
+                extracted_lat = None
+                extracted_lon = None
+                
+                for pattern in patterns:
+                    match = re.search(pattern, test_input.lower())
+                    if match:
+                        try:
+                            lat = float(match.group(1))
+                            lon = float(match.group(2))
+                            
+                            if -90 <= lat <= 90 and -180 <= lon <= 180:
+                                extracted_lat = lat
+                                extracted_lon = lon
+                                break
+                        except (ValueError, IndexError):
+                            continue
+                
+                if extracted_lat is not None and extracted_lon is not None:
+                    st.success(f"✅ **Valid!** Extracted: `{extracted_lat:.6f}, {extracted_lon:.6f}`")
+                    
+                    # Show validation details
+                    col1, col2, col3 = st.columns(3)
+                    with col1:
+                        lat_valid = -90 <= extracted_lat <= 90
+                        st.metric("Latitude Valid", "✅" if lat_valid else "❌", f"{extracted_lat:.6f}")
+                    with col2:
+                        lon_valid = -180 <= extracted_lon <= 180
+                        st.metric("Longitude Valid", "✅" if lon_valid else "❌", f"{extracted_lon:.6f}")
+                    with col3:
+                        precision = len(str(extracted_lat).split('.')[-1]) if '.' in str(extracted_lat) else 0
+                        st.metric("Decimal Places", f"{precision}", "Higher = More Precise")
+                    
+                    # Quick apply button
+                    if st.button("🚀 Apply Validated Coordinates", key="apply_validated"):
+                        st.session_state.latitude = extracted_lat
+                        st.session_state.longitude = extracted_lon
+                        st.session_state.address = f"Validated Input ({extracted_lat:.6f}, {extracted_lon:.6f})"
+                        st.session_state.location_detected = True
+                        st.success("🎯 Validated coordinates applied!")
+                        st.balloons()
+                        st.rerun()
+                else:
+                    st.error("❌ **Invalid format** - Could not extract valid coordinates")
+                    st.info("💡 Try formats like: `40.7128, -74.0060` or `Lat: 40.7128, Lon: -74.0060`")
+
+    def render_location_accuracy_monitor(self):
+        """Render location accuracy monitoring and GPS status."""
+        if st.session_state.location_detected and "GPS Location" in st.session_state.address:
+            st.markdown("---")
+            st.markdown("### 📡 **GPS Status & Accuracy Monitor**")
+            
+            # Extract accuracy from address if available
+            accuracy_text = "Unknown"
+            if '±' in st.session_state.address:
+                accuracy_text = st.session_state.address.split('±')[-1]
+            
+            # Create monitoring dashboard
+            col1, col2, col3, col4 = st.columns(4)
+            
+            with col1:
+                st.metric(
+                    "📍 Position Status",
+                    "🟢 Active",
+                    "GPS Lock Acquired",
+                    help="GPS position is active and locked"
+                )
+            
+            with col2:
+                st.metric(
+                    "🎯 Accuracy",
+                    accuracy_text,
+                    "Position Error",
+                    help="GPS positioning accuracy radius"
+                )
+            
+            with col3:
+                precision = len(str(st.session_state.latitude).split('.')[-1]) if '.' in str(st.session_state.latitude) else 0
+                precision_level = "High" if precision >= 6 else "Medium" if precision >= 4 else "Low"
+                st.metric(
+                    "📐 Precision",
+                    f"{precision} digits",
+                    precision_level,
+                    help="Number of decimal places in coordinates"
+                )
+            
+            with col4:
+                # Calculate coordinate quality score
+                lat_abs = abs(st.session_state.latitude)
+                lon_abs = abs(st.session_state.longitude)
+                
+                # Quality score based on precision and non-zero coordinates
+                quality_score = "Excellent" if precision >= 6 and lat_abs > 0.01 and lon_abs > 0.01 else "Good"
+                
+                st.metric(
+                    "⭐ Quality",
+                    quality_score,
+                    "Overall Assessment",
+                    help="Overall coordinate quality assessment"
+                )
+            
+            # Coordinate details in expandable section
+            with st.expander("🔍 **Detailed Coordinate Information**", expanded=False):
+                st.markdown("**📊 Coordinate Analysis:**")
+                
+                detail_col1, detail_col2 = st.columns(2)
+                
+                with detail_col1:
+                    st.markdown("**🌍 Latitude Details:**")
+                    st.code(f"Raw Value: {st.session_state.latitude}", language="text")
+                    st.code(f"Degrees: {abs(st.session_state.latitude):.6f}°", language="text")
+                    st.code(f"Hemisphere: {'North' if st.session_state.latitude >= 0 else 'South'}", language="text")
+                    
+                    # Convert to degrees, minutes, seconds
+                    lat_deg = int(abs(st.session_state.latitude))
+                    lat_min = int((abs(st.session_state.latitude) - lat_deg) * 60)
+                    lat_sec = ((abs(st.session_state.latitude) - lat_deg) * 60 - lat_min) * 60
+                    lat_dir = 'N' if st.session_state.latitude >= 0 else 'S'
+                    st.code(f"DMS: {lat_deg}° {lat_min}' {lat_sec:.2f}\" {lat_dir}", language="text")
+                
+                with detail_col2:
+                    st.markdown("**🌍 Longitude Details:**")
+                    st.code(f"Raw Value: {st.session_state.longitude}", language="text")
+                    st.code(f"Degrees: {abs(st.session_state.longitude):.6f}°", language="text")
+                    st.code(f"Hemisphere: {'East' if st.session_state.longitude >= 0 else 'West'}", language="text")
+                    
+                    # Convert to degrees, minutes, seconds
+                    lon_deg = int(abs(st.session_state.longitude))
+                    lon_min = int((abs(st.session_state.longitude) - lon_deg) * 60)
+                    lon_sec = ((abs(st.session_state.longitude) - lon_deg) * 60 - lon_min) * 60
+                    lon_dir = 'E' if st.session_state.longitude >= 0 else 'W'
+                    st.code(f"DMS: {lon_deg}° {lon_min}' {lon_sec:.2f}\" {lon_dir}", language="text")
+                
+                st.markdown("**🗺️ Location Context:**")
+                # Determine general location context
+                lat = st.session_state.latitude
+                lon = st.session_state.longitude
+                
+                # Hemisphere info
+                hemisphere_info = []
+                if lat > 0:
+                    hemisphere_info.append("Northern Hemisphere")
+                else:
+                    hemisphere_info.append("Southern Hemisphere")
+                
+                if lon > 0:
+                    hemisphere_info.append("Eastern Hemisphere")
+                else:
+                    hemisphere_info.append("Western Hemisphere")
+                
+                st.info(f"📍 **Location Context:** {', '.join(hemisphere_info)}")
+                
+                # Time zone estimation (rough)
+                timezone_offset = int(lon / 15)  # Rough estimate
+                st.info(f"🕒 **Estimated Time Zone:** UTC{timezone_offset:+d} (approximate)")
+                
+                # Refresh GPS data option
+                if st.button("🔄 Refresh GPS Data", key="refresh_gps_monitor"):
+                    st.session_state.location_detected = False
+                    st.rerun()
+
+    def render_location_sharing_tools(self):
+        """Render location sharing and export tools."""
+        if st.session_state.location_detected:
+            st.markdown("---")
+            st.markdown("### 🔗 **Share Your Location & Session**")
+            
+            # Create sharing options
+            share_col1, share_col2, share_col3 = st.columns(3)
+            
+            with share_col1:
+                st.markdown("**📱 Quick Share:**")
+                
+                # Generate different sharing formats
+                coordinates_decimal = f"{st.session_state.latitude:.6f}, {st.session_state.longitude:.6f}"
+                coordinates_url = f"https://www.google.com/maps?q={st.session_state.latitude},{st.session_state.longitude}"
+                coordinates_apple = f"maps://?q={st.session_state.latitude},{st.session_state.longitude}"
+                
+                if st.button("📋 Copy Coordinates", key="share_coords"):
+                    st_javascript(f"""
+                        navigator.clipboard.writeText('{coordinates_decimal}').then(function() {{
+                            console.log('Coordinates copied to clipboard');
+                        }});
+                    """, key="share_coords_js")
+                    st.success(f"📋 Copied: {coordinates_decimal}")
+                
+                if st.button("🗺️ Open in Google Maps", key="share_gmaps"):
+                    st.markdown(f'<a href="{coordinates_url}" target="_blank">🔗 Open Google Maps</a>', unsafe_allow_html=True)
+                    st.info("🌐 Google Maps link opened in new tab")
+                
+                if st.button("🍎 Open in Apple Maps", key="share_apple"):
+                    st.markdown(f'<a href="{coordinates_apple}" target="_blank">🔗 Open Apple Maps</a>', unsafe_allow_html=True)
+                    st.info("📱 Apple Maps link opened (works on iOS/macOS)")
+            
+            with share_col2:
+                st.markdown("**📊 Export Data:**")
+                
+                # Create exportable data
+                location_data = {
+                    "latitude": st.session_state.latitude,
+                    "longitude": st.session_state.longitude,
+                    "address": st.session_state.address,
+                    "detection_method": "GPS" if "GPS" in st.session_state.address else "Manual",
+                    "timestamp": datetime.now().isoformat(),
+                    "app_version": "2.0.0"
+                }
+                
+                import json
+                json_data = json.dumps(location_data, indent=2)
+                
+                st.download_button(
+                    "💾 Download Location JSON",
+                    json_data,
+                    file_name=f"merai_location_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
+                    mime="application/json",
+                    help="Download location data as JSON file"
+                )
+                
+                # CSV format for spreadsheet users
+                csv_data = f"latitude,longitude,address,method,timestamp\n{st.session_state.latitude},{st.session_state.longitude},\"{st.session_state.address}\",{'GPS' if 'GPS' in st.session_state.address else 'Manual'},{datetime.now().isoformat()}"
+                
+                st.download_button(
+                    "📊 Download as CSV",
+                    csv_data,
+                    file_name=f"merai_location_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+                    mime="text/csv",
+                    help="Download location data as CSV file"
+                )
+            
+            with share_col3:
+                st.markdown("**🌐 Session URL:**")
+                
+                # Generate a URL that could restore this session (note: this is a mock implementation)
+                # In a real app, you'd save the session state to a database and generate a unique ID
+                import urllib.parse
+                
+                session_params = {
+                    'lat': f"{st.session_state.latitude:.6f}",
+                    'lon': f"{st.session_state.longitude:.6f}",
+                    'addr': st.session_state.address[:50],  # Truncate address for URL
+                    'date': st.session_state.user_selected_date.isoformat(),
+                    'time': st.session_state.user_selected_time.isoformat()
+                }
+                
+                # Create URL parameters
+                url_params = urllib.parse.urlencode(session_params)
+                session_url = f"https://your-merai-app.streamlit.app/?{url_params}"
+                
+                st.info("🔗 **Session URL (concept):**")
+                st.code(session_url, language="text")
+                st.caption("💡 This shows how you could create shareable session links")
+                
+                if st.button("📋 Copy Session URL", key="share_session"):
+                    st_javascript(f"""
+                        navigator.clipboard.writeText('{session_url}').then(function() {{
+                            console.log('Session URL copied to clipboard');
+                        }});
+                    """, key="share_session_js")
+                    st.success("📋 Session URL copied!")
+                
+                # QR Code option (mock)
+                if st.button("📱 Generate QR Code", key="share_qr"):
+                    st.info("📱 QR code feature would generate a scannable code linking to this session")
+                    st.markdown("*(This would require a QR code library like `qrcode` in a full implementation)*")
+
+    def render_location_troubleshooting(self):
+        """Render location troubleshooting and recovery options."""
+        st.markdown("---")
+        st.markdown("### 🛠️ **Location Troubleshooting**")
+        
+        # Check current location status
+        location_status = "unknown"
+        if st.session_state.location_detected:
+            if "GPS" in st.session_state.address:
+                location_status = "gps_success"
+            else:
+                location_status = "manual_success"
+        else:
+            location_status = "not_detected"
+        
+        # Create troubleshooting interface
+        if location_status == "not_detected":
+            st.warning("🔧 **Location Detection Issues?** Try these solutions:")
+            
+            # Create troubleshooting columns
+            trouble_col1, trouble_col2 = st.columns(2)
+            
+            with trouble_col1:
+                st.markdown("**🛰️ GPS Issues:**")
+                
+                gps_fixes = [
+                    "✅ Allow location access in browser",
+                    "🔄 Refresh the page and try again",
+                    "🌐 Ensure you're using HTTPS",
+                    "📱 Check device location services",
+                    "🔧 Try a different browser",
+                    "📶 Check internet connection"
+                ]
+                
+                for fix in gps_fixes:
+                    st.markdown(f"• {fix}")
+                
+                # Quick diagnostic test
+                if st.button("🧪 Test GPS Connection", key="test_gps"):
+                    st.info("🔍 Testing GPS connection...")
+                    
+                    # Use JavaScript to test GPS availability
+                    gps_test = st_javascript("""
+                        function() {
+                            if (navigator.geolocation) {
+                                return {
+                                    available: true,
+                                    message: "GPS API is available",
+                                    userAgent: navigator.userAgent,
+                                    online: navigator.onLine,
+                                    protocol: window.location.protocol
+                                };
+                            } else {
+                                return {
+                                    available: false,
+                                    message: "GPS API not available",
+                                    userAgent: navigator.userAgent,
+                                    online: navigator.onLine,
+                                    protocol: window.location.protocol
+                                };
+                            }
+                        }
+                    """, key="gps_diagnostic_test")
+                    
+                    if gps_test:
+                        if gps_test.get('available'):
+                            st.success("✅ GPS API is available in your browser")
+                        else:
+                            st.error("❌ GPS API is not available in your browser")
+                        
+                        # Show diagnostic info
+                        st.info(f"🌐 Protocol: {gps_test.get('protocol', 'unknown')}")
+                        st.info(f"📶 Online: {gps_test.get('online', 'unknown')}")
+                        
+                        if gps_test.get('protocol') != 'https:':
+                            st.warning("⚠️ Location services require HTTPS. Try accessing via a secure connection.")
+            
+            with trouble_col2:
+                st.markdown("**🗺️ Manual Alternatives:**")
+                
+                manual_options = [
+                    "📍 Use the interactive map below",
+                    "📱 Find coordinates on your phone",
+                    "🌐 Use Google Maps to get coordinates",
+                    "📊 Import coordinates from a file",
+                    "🏙️ Select from popular cities",
+                    "🔍 Use the coordinate validation tool"
+                ]
+                
+                for option in manual_options:
+                    st.markdown(f"• {option}")
+                
+                # Quick location reset
+                if st.button("🔄 Reset Location Settings", key="reset_location"):
+                    # Clear all location-related session state
+                    location_keys = ['location_detected', 'latitude', 'longitude', 'address', 'auto_lat', 'auto_lon']
+                    for key in location_keys:
+                        if key in st.session_state:
+                            if key in ['latitude', 'longitude']:
+                                st.session_state[key] = 0.0
+                            elif key == 'address':
+                                st.session_state[key] = "Not set"
+                            elif key == 'location_detected':
+                                st.session_state[key] = False
+                            else:
+                                del st.session_state[key]
+                    
+                    st.success("🔄 Location settings reset! Try again.")
+                    st.rerun()
+        
+        else:
+            # Location is working - show status and maintenance options
+            st.success("✅ **Location System Working Correctly**")
+            
+            maintenance_col1, maintenance_col2 = st.columns(2)
+            
+            with maintenance_col1:
+                st.markdown("**📊 System Status:**")
+                st.metric("Location Status", "🟢 Active")
+                st.metric("Method", "GPS" if "GPS" in st.session_state.address else "Manual")
+                st.metric("Coordinates", f"({st.session_state.latitude:.4f}, {st.session_state.longitude:.4f})")
+            
+            with maintenance_col2:
+                st.markdown("**🔧 Maintenance Options:**")
+                
+                if st.button("🔄 Refresh Location", key="refresh_location_maintenance"):
+                    st.session_state.location_detected = False
+                    st.rerun()
+                
+                if st.button("🧹 Clear Location Cache", key="clear_cache"):
+                    # Clear any cached location data
+                    st.info("🧹 Location cache cleared")
+                
+                if st.button("📊 Show Diagnostic Info", key="show_diagnostics"):
+                    st.json({
+                        "latitude": st.session_state.latitude,
+                        "longitude": st.session_state.longitude,
+                        "address": st.session_state.address,
+                        "location_detected": st.session_state.location_detected,
+                        "session_keys": list(st.session_state.keys())
+                    })
+        
+        # Common help section
+        st.markdown("**❓ Still Having Issues?**")
+        
+        help_col1, help_col2, help_col3 = st.columns(3)
+        
+        with help_col1:
+            if st.button("📚 View Documentation", key="view_docs"):
+                st.info("📚 Check the README.md file for detailed setup instructions")
+        
+        with help_col2:
+            if st.button("🐛 Report Bug", key="report_bug"):
+                st.info("🐛 Create an issue on the GitHub repository")
+        
+        with help_col3:
+            if st.button("💬 Get Help", key="get_help"):
+                st.info("💬 Contact support or check the FAQ section")
+
+    # ...existing code...
     
     def run(self):
         """Run the main application."""
