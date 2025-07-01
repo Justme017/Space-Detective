@@ -687,29 +687,110 @@ ERROR:
         st.markdown("### 📍 **Manual Coordinate Entry**")
         st.info("💡 **Instructions:** Copy the Lat/Lon values from the Vercel window above and paste them here")
         
+        # Auto-extract coordinates from Vercel iframe if possible
+        st.markdown("**🤖 Auto-Extract Coordinates:**")
+        if st.button("🔄 Auto-Fill from Vercel Window", type="secondary"):
+            # Use JavaScript to try to extract coordinates from the Vercel iframe
+            extracted_coords = st_javascript("""
+                function() {
+                    try {
+                        // Try to access the Vercel iframe and extract coordinates
+                        const iframes = document.querySelectorAll('iframe');
+                        let coords = null;
+                        
+                        // Look for Vercel iframe
+                        for (let iframe of iframes) {
+                            if (iframe.src && iframe.src.includes('geolocation-page.vercel.app')) {
+                                console.log('Found Vercel iframe');
+                                // Try to get coordinates from localStorage or window
+                                try {
+                                    // Check if coordinates are available in the page
+                                    const coordsFromStorage = localStorage.getItem('lastKnownLocation');
+                                    if (coordsFromStorage) {
+                                        coords = JSON.parse(coordsFromStorage);
+                                        console.log('Found coordinates in storage:', coords);
+                                        break;
+                                    }
+                                } catch (e) {
+                                    console.log('Could not access iframe storage');
+                                }
+                            }
+                        }
+                        
+                        // If no coordinates found, return example coordinates for demo
+                        if (!coords) {
+                            // Check if there's any location data in the current page
+                            const locationData = window.lastLocationData || null;
+                            if (locationData && locationData.latitude && locationData.longitude) {
+                                coords = {
+                                    latitude: locationData.latitude,
+                                    longitude: locationData.longitude
+                                };
+                            }
+                        }
+                        
+                        return coords;
+                    } catch (e) {
+                        console.log('Error extracting coordinates:', e);
+                        return null;
+                    }
+                }
+            """, key="auto_extract_coords")
+            
+            if extracted_coords and 'latitude' in extracted_coords:
+                st.success("🎯 Coordinates auto-extracted!")
+                st.session_state.auto_lat = extracted_coords['latitude']
+                st.session_state.auto_lon = extracted_coords['longitude']
+            else:
+                st.warning("⚠️ Could not auto-extract coordinates. Please copy manually from the Vercel window above.")
+        
         manual_col1, manual_col2, manual_col3 = st.columns([1, 1, 1])
         
         with manual_col1:
+            # Use auto-extracted values if available, otherwise use default
+            default_lat = st.session_state.get('auto_lat', 0.0)
             manual_lat = st.number_input(
                 "🌍 Latitude",
                 min_value=-90.0,
                 max_value=90.0,
-                value=0.0,
+                value=default_lat,
                 step=0.000001,
                 format="%.6f",
-                help="Copy latitude from Vercel window above"
+                help="Copy latitude from Vercel window above or use auto-fill",
+                key="manual_lat_input"
             )
+            
+            # Add a quick copy button
+            if st.button("📋 Copy Lat to Clipboard", key="copy_lat"):
+                st_javascript(f"""
+                    navigator.clipboard.writeText('{manual_lat}').then(function() {{
+                        console.log('Latitude copied to clipboard');
+                    }});
+                """, key="copy_lat_js")
+                st.success(f"📋 Copied: {manual_lat}")
         
         with manual_col2:
+            # Use auto-extracted values if available, otherwise use default
+            default_lon = st.session_state.get('auto_lon', 0.0)
             manual_lon = st.number_input(
                 "🌍 Longitude", 
                 min_value=-180.0,
                 max_value=180.0,
-                value=0.0,
+                value=default_lon,
                 step=0.000001,
                 format="%.6f",
-                help="Copy longitude from Vercel window above"
+                help="Copy longitude from Vercel window above or use auto-fill",
+                key="manual_lon_input"
             )
+            
+            # Add a quick copy button
+            if st.button("📋 Copy Lon to Clipboard", key="copy_lon"):
+                st_javascript(f"""
+                    navigator.clipboard.writeText('{manual_lon}').then(function() {{
+                        console.log('Longitude copied to clipboard');
+                    }});
+                """, key="copy_lon_js")
+                st.success(f"📋 Copied: {manual_lon}")
         
         with manual_col3:
             st.markdown("**🎯 Apply Coordinates**")
@@ -725,6 +806,69 @@ ERROR:
                     st.rerun()
                 else:
                     st.warning("⚠️ Please enter valid coordinates (not 0,0)")
+            
+            # Quick paste button for manual entry
+            if st.button("📥 Paste from Clipboard", key="paste_coords"):
+                st.info("💡 Use Ctrl+V to paste coordinates directly into the input boxes above")
+        
+        # 🚀 SMART COORDINATE DETECTION
+        st.markdown("---")
+        st.markdown("**🚀 Smart Coordinate Detection:**")
+        coord_text = st.text_area(
+            "📝 Paste any text containing coordinates here:",
+            placeholder="Example: 'Lat: 40.7128, Lon: -74.0060' or '40.7128, -74.0060'",
+            help="Paste any text containing latitude and longitude - the app will extract them automatically",
+            key="coord_text_input"
+        )
+        
+        if coord_text and st.button("🔍 Extract Coordinates", key="extract_coords"):
+            # Use regex to extract coordinates from text
+            import re
+            
+            # Various patterns for coordinate formats
+            patterns = [
+                r'lat[itude]*[:=\s]+([+-]?\d+\.?\d*)[,\s]+lon[gitude]*[:=\s]+([+-]?\d+\.?\d*)',
+                r'([+-]?\d+\.?\d*)[,\s]+([+-]?\d+\.?\d*)',
+                r'latitude[:\s]+([+-]?\d+\.?\d*)[,\s]+longitude[:\s]+([+-]?\d+\.?\d*)',
+                r'([+-]?\d{1,3}\.\d+)[,\s]+([+-]?\d{1,3}\.\d+)'
+            ]
+            
+            extracted_lat = None
+            extracted_lon = None
+            
+            for pattern in patterns:
+                match = re.search(pattern, coord_text.lower())
+                if match:
+                    try:
+                        lat = float(match.group(1))
+                        lon = float(match.group(2))
+                        
+                        # Validate coordinates
+                        if -90 <= lat <= 90 and -180 <= lon <= 180:
+                            extracted_lat = lat
+                            extracted_lon = lon
+                            break
+                    except (ValueError, IndexError):
+                        continue
+            
+            if extracted_lat is not None and extracted_lon is not None:
+                st.success(f"🎯 Coordinates extracted: {extracted_lat:.6f}, {extracted_lon:.6f}")
+                
+                # Auto-fill the input boxes
+                st.session_state.auto_lat = extracted_lat
+                st.session_state.auto_lon = extracted_lon
+                
+                # Offer to apply immediately
+                if st.button("🚀 Apply Extracted Coordinates", key="apply_extracted"):
+                    st.session_state.latitude = extracted_lat
+                    st.session_state.longitude = extracted_lon
+                    st.session_state.address = f"Extracted GPS ({extracted_lat:.6f}, {extracted_lon:.6f})"
+                    st.session_state.location_detected = True
+                    st.success("🎯 Extracted coordinates applied successfully!")
+                    st.balloons()
+                    st.rerun()
+            else:
+                st.error("❌ Could not extract valid coordinates from the text. Please check the format.")
         
         # Show current coordinates if set
         if st.session_state.latitude != 0.0 or st.session_state.longitude != 0.0:
