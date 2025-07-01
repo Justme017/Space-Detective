@@ -77,4 +77,4 @@ render_sky_chart_section(enhanced_objects, dt, create_sky_chart)
 
 # --- Footer ---
 st.markdown("---")
-st.markdown("<div style='text-align: center; color: #888;'>Built with Streamlit & Skyfield</div>", unsafe_allow_html=True)
+st.markdown("<div style='text-align: center; color: #888;'>Built with ❤️ using Aladin, Streamlit & Skyfield</div>", unsafe_allow_html=True)
