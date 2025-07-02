@@ -1,6 +1,7 @@
+
 # Merai - A Space Detective 🔭
 
-A beautiful and interactive Streamlit web application for exploring visible astronomical objects from any location and time. Discover planets, stars, and celestial objects with detailed information and an interactive sky chart.
+A beautiful and interactive Flask web application for exploring visible astronomical objects from any location and time. Discover planets, stars, and celestial objects with detailed information and an interactive sky chart.
 
 ## ✨ Features
 
@@ -12,6 +13,7 @@ A beautiful and interactive Streamlit web application for exploring visible astr
 - **🎨 Beautiful UI**: Space-themed design with responsive layout
 - **✨ Constellation Mapping**: Star objects mapped to their constellations
 
+
 ## 🚀 Quick Start
 
 ### Prerequisites
@@ -22,47 +24,55 @@ A beautiful and interactive Streamlit web application for exploring visible astr
 ### Installation
 
 1. Clone the repository:
-```bash
-git clone https://github.com/Justme017/Space-Detective
-cd "Space-Detective-1/Merai v1"
-```
+   ```bash
+   git clone https://github.com/Justme017/Space-Detective
+   cd Space-Detective
+   ```
 
 2. Install dependencies:
-```bash
-pip install -r requirements.txt
-```
+   ```bash
+   pip install -r requirements.txt
+   ```
 
 3. **Run the application**
    ```bash
-   streamlit run main.py
+   python Merai/app.py
    ```
 
-4. **Open your browser** to `http://localhost:8501` and start exploring!
+4. **Open your browser** to `http://localhost:5000` and start exploring!
+
 
 ## 📁 Project Structure
 
 ```
-Merai v1/
-├── main.py                 # Main Streamlit application
-├── astro_utils.py          # Astronomical calculations and object detection
-├── wiki_utils.py           # Wikipedia API integration
-├── location_utils.py       # Location detection utilities
-├── constellation_utils.py  # Constellation mapping
-├── skychart_utils.py       # Sky chart generation
-├── requirements.txt        # Python dependencies
-├── de421.bsp              # JPL planetary ephemeris data
-├── hip_main.dat           # Hipparcos star catalog
-├── hygdata_v41.csv        # HYG star database
-└── test_imports.py        # Import verification script
+Space-Detective/
+├── Merai/
+│   ├── app.py                # Main Flask application
+│   ├── main.py               # (Legacy/utility entry point)
+│   ├── utils/
+│   │   ├── astro_utils.py    # Astronomical calculations and object detection
+│   │   ├── wiki_utils.py     # Wikipedia API integration
+│   │   ├── location_utils.py # Location detection utilities
+│   │   ├── constellation_utils.py # Constellation mapping
+│   │   ├── skychart_utils.py # Sky chart generation
+│   │   └── app_utils.py      # App utility functions
+│   ├── templates/
+│   │   └── index.html        # Main HTML template
+│   ├── de421.bsp             # JPL planetary ephemeris data
+│   ├── hip_main.dat          # Hipparcos star catalog
+│   ├── hygdata_v41.csv       # HYG star database
+│   └── requirements.txt      # Python dependencies
+├── README.md
+└── ...
 ```
 
 ## 🛠️ Core Modules
 
-### `main.py`
-The main application built with Streamlit, organized as a class-based architecture:
 
-- **MeraiApp**: Main application class with modular methods
-- **Location handling**: Automatic detection and manual map selection  
+### `app.py`
+The main application built with Flask:
+
+- **Location handling**: Automatic detection and manual map selection
 - **Object enhancement**: Enriches astronomical data with Wikipedia content
 - **Interactive UI**: Beautiful space-themed interface with responsive design
 
@@ -155,4 +165,4 @@ If you encounter any issues, please check the troubleshooting section above or c
 
 ---
 
-**Built with ❤️ using Python, Streamlit, and Skyfield**
+**Built with ❤️ using Python, Flask, and Skyfield**

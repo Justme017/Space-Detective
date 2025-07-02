@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Merai - A Space Detective</title>
+
+  <!-- Leaflet -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet/dist/leaflet.css"
+  />
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+
+</head>
+<body>
+  <div class="container">
+    <header class="app-header">
+      <h1>🔭 Merai - A Space Detective</h1>
+      <p class="subtitle">Explore the cosmos from your location</p>
+      <hr class="divider">
+    </header>
+
+    {% block content %}{% endblock %}
+
+    <footer class="app-footer">
+      <hr class="divider">
+      <p>Built with ❤️ using Skyfield & Flask</p>
+    </footer>
+  </div>
+
+  <!-- Custom Scripts -->
+  <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>

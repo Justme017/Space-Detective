@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% block content %}
+
+  <!-- Setup Form: stacked vertically -->
+  <form id="setup-form" action="/" method="post" class="control-panel">
+
+    <!-- Observation Point -->
+    <div class="control-group">
+      <h2>📍 Observation Point</h2>
+      <input
+        type="text"
+        id="address"
+        name="address"
+        value="{{ address or '' }}"
+        readonly
+        class="input-readonly"
+      >
+      <div class="button-row">
+        <button type="button" class="btn-inline" onclick="getGPS()">Use GPS</button>
+        <span>OR</span>
+        <button type="button" class="btn-inline" onclick="showMap()">Choose on Map</button>
+      </div>
+      <div id="map-container" class="map-box hidden">
+        <div id="map" class="map-box"></div>
+        <small class="hint">Click map to pick location</small>
+      </div>
+      <input type="hidden" id="lat" name="latitude">
+      <input type="hidden" id="lon" name="longitude">
+    </div>
+
+    <!-- Date & Time -->
+    <div class="control-group">
+      <h2>🕒 Date & Time</h2>
+      <div class="datetime-row">
+        <input
+          type="date"
+          name="user_date"
+          value="{{ session.user_date or dt_date }}"
+          required
+          class="input-inline"
+        >
+        <input
+          type="time"
+          name="user_time"
+          step="1"
+          value="{{ session.user_time or dt_time }}"
+          required
+          class="input-inline"
+        >
+      </div>
+    </div>
+
+    <!-- See the Sky -->
+    <div class="control-group" style="text-align:center;">
+      <button type="submit" class="btn">🔭 See the Sky</button>
+    </div>
+
+  </form>
+
+  {% if show_results %}
+  <!-- Results Section -->
+  <section class="results">
+    <h2>🌌 Visible Astronomical Objects</h2>
+    {% if objects %}
+      <div class="cards-grid">
+        {% for o in objects %}
+          <div class="card">
+            <img
+              src="{{ get_image(o) }}"
+              alt="{{ o.name or o.hip_id }}"
+              class="card-img"
+            >
+            <div class="card-content">
+              <h3>{{ o.name or o.hip_id }}</h3>
+
+              {# Read-more description #}
+              {% set desc = o.fetched_description or "" %}
+              {% if desc|length > 120 %}
+                <details class="desc-details">
+                  <summary>{{ desc[:120] ~ '…' }}</summary>
+                  <p>{{ desc }}</p>
+                </details>
+              {% else %}
+                <p class="description">{{ desc }}</p>
+              {% endif %}
+
+              <p>
+                <strong>Alt:</strong> {{ o.altitude }}°
+                &nbsp;
+                <strong>Az:</strong> {{ o.azimuth }}°
+              </p>
+              {% if o.constellation != 'N/A' %}
+                <p class="constellation">{{ o.constellation }}</p>
+              {% endif %}
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p style="color:#ffeb3b; text-align:center;">
+        No objects visible at this time/location.
+      </p>
+    {% endif %}
+
+    <h2>🌟 Interactive Sky Chart (Zoom: {{ sky_zoom }}×)</h2>
+    <form method="post" class="zoom-controls">
+      <button
+        name="zoom"
+        value="out"
+        class="btn-zoom"
+        {% if sky_zoom == zoom_levels[0] %}disabled{% endif %}
+      >➖</button>
+      <button
+        name="zoom"
+        value="in"
+        class="btn-zoom"
+        {% if sky_zoom == zoom_levels[-1] %}disabled{% endif %}
+      >➕</button>
+    </form>
+    <div class="chart-container">
+      {% if chart_html %}
+        {{ chart_html|safe }}
+      {% else %}
+        <p style="color:#ccc; text-align:center;">
+          Sky chart unavailable.
+        </p>
+      {% endif %}
+    </div>
+
+    <h2>🔭 Online Sky Atlas (Aladin Lite)</h2>
+    <iframe
+      src="https://aladin.u-strasbg.fr/AladinLite/"
+      width="100%" height="500"
+      style="border:none;"
+    ></iframe>
+  </section>
+  {% endif %}
+
+{% endblock %}
