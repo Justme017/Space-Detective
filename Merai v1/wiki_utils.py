@@ -65,6 +65,17 @@ def get_object_image_url(name):
     if name.startswith('HIP ') or 'star' in name.lower():
         return 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c4/Sirius_A_and_B_Hubble_photo.jpg/256px-Sirius_A_and_B_Hubble_photo.jpg'
     
+    # Fallback to a search engine if Wikipedia fails
+    try:
+        # Use a search engine that allows direct image linking based on query
+        # This is a simplified example; a real implementation might need a proper API
+        search_query = name.replace(" ", "+") + "+star+HD+image"
+        # Using a service like Unsplash Source for demonstration
+        return f"https://source.unsplash.com/400x400/?{search_query}"
+    except Exception:
+        # If everything fails, return the generic star image
+        return 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c4/Sirius_A_and_B_Hubble_photo.jpg/256px-Sirius_A_and_B_Hubble_photo.jpg'
+    
     return None
 
 def get_object_description(name):
