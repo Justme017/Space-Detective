@@ -14,32 +14,36 @@ import streamlit as st
 _CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 DE421_PATH = os.path.join(_CURRENT_DIR, "de421.bsp")
 
-# URLs for TLE data from CelesTrak
-STATIONS_URL = "https://celestrak.org/NORAD/elements/gp.php?GROUP=stations&FORMAT=tle"
-BRIGHTEST_URL = "https://celestrak.org/NORAD/elements/gp.php?GROUP=visual&FORMAT=tle"
+# Local TLE files
+STATIONS_FILE = os.path.join(_CURRENT_DIR, "stations.tle")
+BRIGHTEST_FILE = os.path.join(_CURRENT_DIR, "brightest.tle")
 
 # --- Pre-load data to speed up subsequent calls ---
-@st.cache_data(show_spinner=False)
 def _preload_data():
     """
-    Loads and caches planetary and satellite data.
-    Using st.cache_data ensures this runs only once.
+    Loads planetary and satellite data from local files.
+    This runs once when the module is imported.
     """
-    print("Pre-loading planetary and satellite data...")
+    print("Loading planetary and satellite data from local files...")
     try:
         planets = load(DE421_PATH)
-        stations = load.tle_file(STATIONS_URL, reload=False)
-        brightest_sats = load.tle_file(BRIGHTEST_URL, reload=False)
+        
+        if not os.path.exists(STATIONS_FILE) or not os.path.exists(BRIGHTEST_FILE):
+            st.error("Satellite data files (stations.tle, brightest.tle) not found. Please run the `download_tle_data.py` script first.")
+            return None, []
+
+        stations = load.tle_file(STATIONS_FILE)
+        brightest_sats = load.tle_file(BRIGHTEST_FILE)
         
         # Combine and remove duplicates
         all_sats = {sat.model.satnum: sat for sat in stations + brightest_sats}
         satellites = list(all_sats.values())
         
-        print("Data pre-loading complete.")
+        print("Data loading complete.")
         return planets, satellites
     except Exception as e:
-        print(f"Fatal error during data pre-loading: {e}")
-        # Return empty objects on failure
+        print(f"Fatal error during data loading: {e}")
+        st.error(f"An error occurred while loading satellite data: {e}")
         return None, []
 
 PLANETS, SATELLITES = _preload_data()
