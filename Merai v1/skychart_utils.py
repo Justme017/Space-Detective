@@ -17,6 +17,8 @@ OBJECT_STYLES = {
     'Planet': {'symbol': 'circle', 'color': 'gold', 'size': 22, 'label': 'Planet'},
     'Sun': {'symbol': 'circle', 'color': 'yellow', 'size': 32, 'label': 'Sun'},
     'Moon': {'symbol': 'circle', 'color': 'lightgray', 'size': 28, 'label': 'Moon'},
+    'Satellite': {'symbol': 'diamond-open', 'color': 'cyan', 'size': 14, 'label': 'Satellite'},
+    'Space Station': {'symbol': 'square-open', 'color': 'lime', 'size': 18, 'label': 'Space Station'},
     'Deep Sky': {'symbol': 'diamond', 'color': 'cyan', 'size': 18, 'label': 'Deep Sky'},
     'Other': {'symbol': 'circle-open', 'color': 'grey', 'size': 10, 'label': 'Other'}
 }
@@ -136,6 +138,8 @@ if __name__ == '__main__':
         {'name': 'Mars', 'azimuth': 270, 'altitude': 45, 'type': 'Planet'},
         {'name': 'Sirius', 'azimuth': 120, 'altitude': 20, 'type': 'Star'},
         {'name': 'Orion Nebula', 'azimuth': 75, 'altitude': 45, 'type': 'Deep Sky'},
+        {'name': 'Hubble Space Telescope', 'azimuth': 210, 'altitude': 50, 'type': 'Satellite'},
+        {'name': 'International Space Station', 'azimuth': 330, 'altitude': 55, 'type': 'Space Station'},
         {'name': 'Object Below Horizon', 'azimuth': 150, 'altitude': -10, 'type': 'Star'}
     ]
     

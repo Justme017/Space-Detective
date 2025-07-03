@@ -285,3 +285,11 @@ def render_sky_chart_section(visible_objects, dt, create_sky_chart_func):
         '<iframe src="https://aladin.u-strasbg.fr/AladinLite/" width="100%" height="500" style="border:none;"></iframe>',
         height=510
     )
+
+    # Satellite Tracker embed
+    with st.expander("🛰️ Live Satellite Tracker"):
+        st.info("This is a live map of satellite positions. Note: This is a third-party service.")
+        components.html(
+            '<iframe src="https://keeptrack.space/#" width="100%" height="600" style="border:none;"></iframe>',
+            height=610
+        )
