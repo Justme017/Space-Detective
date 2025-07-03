@@ -64,10 +64,7 @@ with st.spinner("Scanning the cosmos..."):
             dt
         )
         
-        if visible_astro_objects:
-            enhanced_objects = enhance_visible_objects(visible_astro_objects, constellation_map)
-        else:
-            enhanced_objects = []
+        enhanced_objects = enhance_visible_objects(visible_astro_objects, constellation_map) if visible_astro_objects else []
 
         # Fetch satellites
         visible_satellites = get_visible_satellites(
