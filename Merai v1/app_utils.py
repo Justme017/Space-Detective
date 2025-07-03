@@ -192,17 +192,33 @@ def get_object_emoji(obj_type):
 def create_object_tile(obj, container):
     """Creates a display tile for a single celestial object."""
     name = obj.get('name') or obj.get('hip_id', 'Unknown')
-    emoji = get_object_emoji(obj['type'])
+    obj_type = obj.get('type', 'Unknown')
+    emoji = get_object_emoji(obj_type)
     
     with container:
-        st.markdown(f"<div style='border: 1px solid #ffd700; border-radius: 10px; padding: 1rem; margin-bottom: 1rem;'>", unsafe_allow_html=True)
+        st.markdown(f"""<div style='border: 1px solid #ffd700; 
+                                     border-radius: 10px; 
+                                     padding: 1rem; 
+                                     margin-bottom: 1rem; 
+                                     height: 100%;'>""", 
+                    unsafe_allow_html=True)
         st.markdown(f"<h5>{emoji} {name}</h5>", unsafe_allow_html=True)
 
         img_url = get_object_image_url(name)
         if img_url:
-            st.image(img_url, use_container_width=True)
+            # Apply special styling for major celestial bodies
+            if obj_type in ['Planet', 'Moon', 'Sun', 'Star']:
+                st.markdown(f'''
+                    <div style="display: flex; justify-content: center; align-items: center; height: 300px; margin-bottom: 1rem;">
+                        <img src="{img_url}" 
+                             style="max-width: 100%; max-height: 100%; width: 300px; height: 300px; object-fit: cover; border-radius: 24px;">
+                    </div>
+                ''', unsafe_allow_html=True)
+            else:
+                # Default image display for other types (e.g., satellites)
+                st.image(img_url, use_container_width=True)
 
-        st.write(f"**Type:** {obj['type']}")
+        st.write(f"**Type:** {obj_type}")
         st.write(f"**Altitude:** {obj['altitude']:.2f}°")
         st.write(f"**Azimuth:** {obj['azimuth']:.2f}°")
         if obj.get('constellation') != "N/A":
