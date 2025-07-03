@@ -45,8 +45,8 @@ def get_visible_satellites(lat, lon, user_dt):
 
     # Load satellite TLEs from CelesTrak
     try:
-        stations = load.tle_file(STATIONS_URL, reload=True)
-        brightest_sats = load.tle_file(BRIGHTEST_URL, reload=True)
+        stations = load.tle_file(STATIONS_URL, reload=False)
+        brightest_sats = load.tle_file(BRIGHTEST_URL, reload=False)
         # Combine and remove duplicates
         all_sats = {sat.model.satnum: sat for sat in stations + brightest_sats}
         satellites = list(all_sats.values())
