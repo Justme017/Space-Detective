@@ -73,8 +73,8 @@ with st.spinner("Scanning the cosmos..."):
             dt
         )
         
-        # Combine all objects
-        all_visible_objects = enhanced_objects + visible_satellites
+        # Combine all objects, ensuring they are lists
+        all_visible_objects = (enhanced_objects or []) + (visible_satellites or [])
 
     except Exception as e:
         st.error(f"Failed to fetch astronomical data: {e}")
