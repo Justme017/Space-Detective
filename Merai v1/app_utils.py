@@ -280,15 +280,16 @@ def render_sky_chart_section(visible_objects, dt, create_sky_chart_func):
         st.info("No objects to display on the sky chart.")
 
     # Aladin Lite embed
-    st.markdown("### 🔭 Online Sky Atlas (Aladin Lite)")
-    components.html(
-        '<iframe src="https://aladin.u-strasbg.fr/AladinLite/" width="100%" height="500" style="border:none;"></iframe>',
-        height=510
-    )
+    with st.expander("### 🔭 Online Sky Atlas (Aladin Lite)"):
+        st.info("This is a live map of Cosmos positions.")
+        components.html(
+            '<iframe src="https://aladin.u-strasbg.fr/AladinLite/" width="100%" height="500" style="border:none;"></iframe>',
+            height=510
+        )
 
     # Satellite Tracker embed
-    with st.expander("🛰️ Live Satellite Tracker"):
-        st.info("This is a live map of satellite positions. Note: This is a Open source third-party service.")
+    with st.expander("### 🛰️ Live Satellite Tracker"):
+        st.info("This is a live map of satellite positions.")
         components.html(
             '<iframe src="https://app.keeptrack.space/" width="100%" height="600" style="border:none;"></iframe>',
             height=610

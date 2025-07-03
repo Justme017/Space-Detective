@@ -60,23 +60,18 @@ def get_object_image_url(name):
     # Fallback to predefined images if API fails or has no image
     if name in FALLBACK_IMAGES:
         return FALLBACK_IMAGES[name]
-    
-    # Generic fallback for stars
-    if name.startswith('HIP ') or 'star' in name.lower():
-        return 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c4/Sirius_A_and_B_Hubble_photo.jpg/256px-Sirius_A_and_B_Hubble_photo.jpg'
-    
-    # Fallback to a search engine if Wikipedia fails
+
+    # If Wikipedia fails, construct a targeted search query for a better source
     try:
-        # Use a search engine that allows direct image linking based on query
-        # This is a simplified example; a real implementation might need a proper API
-        search_query = name.replace(" ", "+") + "+star+HD+image"
-        # Using a service like Unsplash Source for demonstration
+        # A more specific query for astronomical images
+        search_query = name.replace(" ", "+") + "+star"
+        # Using a service that might have better astronomical images.
+        # This is still a demonstration as a dedicated API would be better.
         return f"https://source.unsplash.com/400x400/?{search_query}"
     except Exception:
-        # If everything fails, return the generic star image
-        return 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c4/Sirius_A_and_B_Hubble_photo.jpg/256px-Sirius_A_and_B_Hubble_photo.jpg'
-    
-    return None
+        # If all else fails, return None so the UI can handle it gracefully
+        return None
+
 
 def get_object_description(name):
     """
