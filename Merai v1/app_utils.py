@@ -290,6 +290,6 @@ def render_sky_chart_section(visible_objects, dt, create_sky_chart_func):
     with st.expander("🛰️ Live Satellite Tracker"):
         st.info("This is a live map of satellite positions. Note: This is a third-party service.")
         components.html(
-            '<iframe src="https://keeptrack.space/#" width="100%" height="600" style="border:none;"></iframe>',
+            '<iframe src="https://app.keeptrack.space/" width="100%" height="600" style="border:none;"></iframe>',
             height=610
         )
