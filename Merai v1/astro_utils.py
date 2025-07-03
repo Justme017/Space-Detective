@@ -136,16 +136,24 @@ def enhance_visible_objects(visible_objects, constellation_map):
     enhanced_objects = []
     
     for obj in visible_objects:
-        # Determine the lookup key for Wikipedia
-        lookup_key = obj.get('hip_id') if obj['type'] == 'Star' and not obj.get('name') else obj['name']
-        description = get_object_description(lookup_key)
-        obj['fetched_description'] = description
+        # For stars, the name might be None initially.
+        # We need to fetch the description and potentially extract the name.
+        if obj['type'] == 'Star':
+            # If the star has no name, use its HIP ID to get the description.
+            # Otherwise, use the existing name.
+            lookup_key = obj.get('name') or obj.get('hip_id')
+            description = get_object_description(lookup_key)
+            obj['fetched_description'] = description
 
-        # If the star still has no name, try to extract one from the description.
-        if obj['type'] == 'Star' and not obj.get('name'):
-            name_from_desc = extract_name_from_description(description)
-            if name_from_desc:
-                obj['name'] = name_from_desc
+            # If the star still has no name, try to extract one from the description.
+            if not obj.get('name') and description:
+                name_from_desc = extract_name_from_description(description)
+                if name_from_desc:
+                    obj['name'] = name_from_desc
+        else:
+            # For non-star objects, the name is always present.
+            description = get_object_description(obj['name'])
+            obj['fetched_description'] = description
 
         # Add constellation information for stars
         if obj['type'] == 'Star':
