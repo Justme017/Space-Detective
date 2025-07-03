@@ -10,6 +10,7 @@ import streamlit as st
 
 from astro_utils import get_visible_objects, enhance_visible_objects
 from constellation_utils import load_constellation_data
+from satellites_utils import get_visible_satellites
 from skychart_utils import create_sky_chart
 from app_utils import (
     apply_custom_styling,
@@ -52,28 +53,39 @@ if not st.session_state.get('location_detected', False):
     st.stop()
 
 # --- Data Fetching and Processing ---
-st.header("🌌 Visible Astronomical Objects")
+st.header("🌌 Visible Astronomical Objects & Satellites")
 with st.spinner("Scanning the cosmos..."):
     try:
+        # Fetch planets and stars
         constellation_map = load_constellation_data()
-        visible_objects = get_visible_objects(
+        visible_astro_objects = get_visible_objects(
             st.session_state.latitude,
             st.session_state.longitude,
             dt
         )
         
-        if visible_objects:
-            enhanced_objects = enhance_visible_objects(visible_objects, constellation_map)
+        if visible_astro_objects:
+            enhanced_objects = enhance_visible_objects(visible_astro_objects, constellation_map)
         else:
             enhanced_objects = []
+
+        # Fetch satellites
+        visible_satellites = get_visible_satellites(
+            st.session_state.latitude,
+            st.session_state.longitude,
+            dt
+        )
+        
+        # Combine all objects
+        all_visible_objects = enhanced_objects + visible_satellites
 
     except Exception as e:
         st.error(f"Failed to fetch astronomical data: {e}")
         st.stop()
 
 # --- Display Results ---
-create_object_tiles(enhanced_objects)
-render_sky_chart_section(enhanced_objects, dt, create_sky_chart)
+create_object_tiles(all_visible_objects)
+render_sky_chart_section(all_visible_objects, dt, create_sky_chart)
 
 # --- Footer ---
 st.markdown("---")
