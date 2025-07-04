@@ -7,12 +7,17 @@ Version: 2.1.0 - Refactored Release
 """
 
 import streamlit as st
+import sys
+import os
 
-from astro_utils import get_visible_objects, enhance_visible_objects
-from constellation_utils import load_constellation_data
-from satellites_utils import get_visible_satellites
-from skychart_utils import create_sky_chart
-from app_utils import (
+# Add the 'utils' directory to the Python path
+sys.path.append(os.path.join(os.path.dirname(__file__), 'utils'))
+
+from utils.astro_utils import get_visible_objects, enhance_visible_objects
+from utils.constellation_utils import load_constellation_data
+from utils.satellites_utils import get_visible_satellites
+from utils.skychart_utils import create_sky_chart
+from utils.app_utils import (
     apply_custom_styling,
     render_location_section,
     render_datetime_section,
