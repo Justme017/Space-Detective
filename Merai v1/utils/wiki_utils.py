@@ -7,7 +7,6 @@ Wikipedia to enhance the display of astronomical objects.
 
 import requests
 import html
-import re
 from bs4 import BeautifulSoup
 
 # --- Constants ---
@@ -53,34 +52,24 @@ def get_object_image_url(name):
     Returns:
         str or None: The image URL if found, otherwise None.
     """
+    # First, try the Wikipedia API for the original name
     data = _fetch_from_wikipedia_api(name)
     if data and 'thumbnail' in data and 'source' in data['thumbnail']:
         return data['thumbnail']['source']
 
-    # Fallback to predefined images if API fails or has no image
+    # If the object is a star, try with a "(star)" suffix.
+    # A simple heuristic: if it's not a planet/moon in our fallback list, it might be a star.
+    if name not in FALLBACK_IMAGES:
+        star_name = f"{name} (star)"
+        data = _fetch_from_wikipedia_api(star_name)
+        if data and 'thumbnail' in data and 'source' in data['thumbnail']:
+            return data['thumbnail']['source']
+
+    # Fallback to predefined images if API fails
     if name in FALLBACK_IMAGES:
         return FALLBACK_IMAGES[name]
 
-    # If Wikipedia fails, fall back to a web search for an image
-    try:
-        # Use a search engine that is likely to have astronomical images
-        search_url = f"https://www.bing.com/images/search?q={name.replace(' ', '+')}+space"
-        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'}
-        response = requests.get(search_url, headers=headers, timeout=5)
-        response.raise_for_status()
-        
-        soup = BeautifulSoup(response.text, 'html.parser')
-        
-        # Find the first image result
-        img_tag = soup.find("img", class_="mimg")
-        from bs4.element import Tag
-        if isinstance(img_tag, Tag) and img_tag.get('src'):
-            return img_tag.get('src')
-
-    except Exception:
-        # If all else fails, return None
-        return None
-    
+    # If all else fails, return None
     return None
 
 
@@ -101,30 +90,3 @@ def get_object_description(name):
         return soup.get_text(strip=True)
         
     return "Description not available."
-
-def extract_name_from_description(description: str) -> str | None:
-    """
-    Extract a common name from a description, prioritizing structured patterns.
-
-    Args:
-        description (str): The description text.
-
-    Returns:
-        str or None: The extracted name if found, otherwise None.
-    """
-    if not description:
-        return None
-
-    # Try to find name before " is " or ","
-    match = re.match(r"(.*?)(?: is |,)", description)
-    if match:
-        potential_name = match.group(1).strip()
-        if potential_name and potential_name[0].isupper() and len(potential_name) < 70:
-            return potential_name
-
-    # Fallback to the first capitalized word (if suitable)
-    match = re.match(r"([A-Z][a-zA-Z0-9\\-]{2,})", description)
-    if match:
-        return match.group(1)
-            
-    return None
