@@ -61,13 +61,27 @@ def get_object_image_url(name):
     if name in FALLBACK_IMAGES:
         return FALLBACK_IMAGES[name]
 
-    # If Wikipedia API fails, construct a URL to search for the image on Wikipedia's mobile site
+    # If Wikipedia fails, fall back to a web search for an image
     try:
-        search_query = name.replace(" ", "_")
-        return f"https://en.m.wikipedia.org/wiki/{search_query}#/media/File:{search_query}.jpg"
+        # Use a search engine that is likely to have astronomical images
+        search_url = f"https://www.bing.com/images/search?q={name.replace(' ', '+')}+space"
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'}
+        response = requests.get(search_url, headers=headers, timeout=5)
+        response.raise_for_status()
+        
+        soup = BeautifulSoup(response.text, 'html.parser')
+        
+        # Find the first image result
+        img_tag = soup.find("img", class_="mimg")
+        from bs4.element import Tag
+        if isinstance(img_tag, Tag) and img_tag.get('src'):
+            return img_tag.get('src')
+
     except Exception:
-        # If all else fails, return None so the UI can handle it gracefully
+        # If all else fails, return None
         return None
+    
+    return None
 
 
 def get_object_description(name):
