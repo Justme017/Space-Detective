@@ -140,31 +140,24 @@ def enhance_visible_objects(visible_objects, constellation_map):
     
     for obj in visible_objects:
         try:
-            image_url = None  # Default image URL
-            # For stars, the name might be None initially.
-            # We need to fetch the description and potentially extract the name.
+            image_url = None
+            description = None
+
             if obj['type'] == 'Star':
-                # If the star has no name, use its HIP ID to get the description.
-                # Otherwise, use the existing name.
                 lookup_key = obj.get('name') or obj.get('hip_id')
                 description = get_object_description(lookup_key)
-                obj['fetched_description'] = description
 
-                # If the star still has no name, try to extract one from the description.
                 if not obj.get('name') and description:
                     name_from_desc = extract_name_from_description(description)
                     if name_from_desc:
                         obj['name'] = name_from_desc
                 
-                # Use the final name (or key) to get the image
                 image_url = get_object_image_url(obj.get('name') or lookup_key)
-
             else:
-                # For non-star objects, the name is always present.
                 description = get_object_description(obj['name'])
-                obj['fetched_description'] = description
                 image_url = get_object_image_url(obj['name'])
 
+            obj['fetched_description'] = description
             obj['image_url'] = image_url
 
             # Add constellation information for stars
