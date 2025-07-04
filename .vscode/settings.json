@@ -1,6 +1,3 @@
 {
-    "github.copilot.nextEditSuggestions.enabled": true,
-    "python.analysis.extraPaths": [
-        "./Merai v1/utils"
-    ]
+    "github.copilot.nextEditSuggestions.enabled": true
 }
