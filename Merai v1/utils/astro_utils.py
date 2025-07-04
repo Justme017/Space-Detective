@@ -6,8 +6,8 @@ objects, including planets and bright stars, from a given location and time.
 """
 
 import os
-import pandas as pd
 from skyfield.api import load, Topos, Star
+from skyfield.data import hipparcos
 from .wiki_utils import (
     get_object_description, get_object_image_url
 )
@@ -16,8 +16,7 @@ from .wiki_utils import (
 _CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 _DATA_DIR = os.path.join(os.path.dirname(_CURRENT_DIR), 'data')
 DE421_PATH = os.path.join(_DATA_DIR, "de421.bsp")
-HYG_CATALOG_PATH = os.path.join(_DATA_DIR, "hygdata_v41.csv")
-HIP_NAMES_PATH = os.path.join(_DATA_DIR, "hip_common_names.csv")
+HIPP_PATH = os.path.join(_DATA_DIR, "hip_main.dat")
 
 # --- Private Helper Functions ---
 
@@ -51,55 +50,48 @@ def _get_visible_planets(observer, t, planets):
 
 def _get_visible_stars(observer, t):
     """
-    Calculates the visible bright stars from the observer's location and time,
-    incorporating common names.
+    Calculates the visible bright stars from the observer's location and time.
     """
     visible_stars = []
     try:
-        # Step 1 & 2: Load the star catalog and the common names file.
-        stars_df = pd.read_csv(HYG_CATALOG_PATH)
-        hip_names_df = pd.read_csv(HIP_NAMES_PATH)
-
-        # Step 3: Merge the two dataframes to get common names alongside star data.
-        # We ensure the 'hip' columns are of the same type to merge correctly.
-        stars_df['hip'] = pd.to_numeric(stars_df['hip'], errors='coerce').astype('Int64')
-        hip_names_df['hip_id'] = pd.to_numeric(hip_names_df['hip_id'], errors='coerce').astype('Int64')
-        stars_df = pd.merge(stars_df, hip_names_df, left_on='hip', right_on='hip_id', how='left')
-
-        # Step 4: Filter for bright stars and valid HIP numbers.
-        bright_stars = stars_df[(stars_df['mag'] < 4.5) & (stars_df['hip'].notna())].copy()
-        bright_stars['hip'] = bright_stars['hip'].astype(int)
-
-        for _, star_row in bright_stars.iterrows():
+        with open(HIPP_PATH, 'rb') as f:
+            stars = hipparcos.load_dataframe(f)
+        
+        bright_stars = stars[stars['magnitude'] < 2.0]
+        
+        for hip, star_row in bright_stars.iterrows():
             try:
-                # Create a Skyfield Star object to calculate its position.
-                star = Star(ra_hours=star_row['ra'], dec_degrees=star_row['dec'])
+                star = Star(ra_hours=star_row['ra_hours'], dec_degrees=star_row['dec_degrees'])
                 alt, az, _ = observer.at(t).observe(star).apparent().altaz()
 
-                # Check if the star is above the horizon.
                 if alt.degrees > 0:
-                    hip_id = star_row['hip']
-                    common_name = star_row.get('common_name')
+                    proper_name = star_row.get('proper')
                     
-                    # Step 5: Format the display name.
-                    display_name = f"{common_name} (HIP {hip_id})" if pd.notna(common_name) else f"HIP {hip_id}"
-
+                    # The 'hip' value from iterrows() is the index, which is the HIP ID.
+                    # It should be an integer, but we validate it to be safe.
+                    try:
+                        # Convert to string first to handle potential type issues
+                        hip_id_int = int(str(hip))
+                    except (ValueError, TypeError):
+                        continue  # Skip if hip is not a valid integer
+                    
+                    display_name = str(proper_name).strip() if proper_name and str(proper_name).strip().lower() != 'nan' else None
+                    
                     visible_stars.append({
                         'name': display_name,
-                        'common_name': common_name if pd.notna(common_name) else None,
-                        'hip_id': f"HIP {hip_id}",
-                        'hip_int': hip_id,
+                        'hip_id': f"HIP {hip_id_int}",
+                        'hip_int': hip_id_int,
                         'type': 'Star',
                         'altitude': round(alt.degrees, 2),
                         'azimuth': round(az.degrees, 2)
                     })
             except Exception:
-                # Skip any single star that causes an error.
+                # Skip stars that can't be processed
                 continue
                 
-    except Exception as e:
-        # If the whole process fails, log the error.
-        print(f"Error loading or processing star data: {e}")
+    except Exception:
+        # Handle cases where star data cannot be loaded or processed
+        pass
         
     return visible_stars
 
@@ -136,6 +128,13 @@ def get_visible_objects(lat, lon, user_dt=None):
 def enhance_visible_objects(visible_objects, constellation_map):
     """
     Enhance astronomical objects with Wikipedia descriptions and constellation info.
+    
+    Args:
+        visible_objects (list): A list of astronomical objects.
+        constellation_map (dict): A mapping of HIP IDs to constellation names.
+        
+    Returns:
+        list: A list of enhanced objects with additional information.
     """
     enhanced_objects = []
     
@@ -145,8 +144,8 @@ def enhance_visible_objects(visible_objects, constellation_map):
             description = None
 
             if obj['type'] == 'Star':
-                # For stars, we prefer using the common name for lookups if available.
-                lookup_key = obj.get('common_name') or obj.get('hip_id')
+                # For stars, we prefer using the proper name if available, otherwise the HIP ID.
+                lookup_key = obj.get('name') or obj.get('hip_id')
                 description = get_object_description(lookup_key)
                 image_url = get_object_image_url(lookup_key)
                 
