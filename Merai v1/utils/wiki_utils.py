@@ -7,6 +7,7 @@ Wikipedia to enhance the display of astronomical objects.
 
 import requests
 import html
+import re
 from bs4 import BeautifulSoup
 
 # --- Constants ---
@@ -52,25 +53,24 @@ def get_object_image_url(name):
     Returns:
         str or None: The image URL if found, otherwise None.
     """
-    # First, try the Wikipedia API for the original name
     data = _fetch_from_wikipedia_api(name)
     if data and 'thumbnail' in data and 'source' in data['thumbnail']:
         return data['thumbnail']['source']
 
-    # If the object is a star, try with a "(star)" suffix.
-    # A simple heuristic: if it's not a planet/moon in our fallback list, it might be a star.
-    if name not in FALLBACK_IMAGES:
-        star_name = f"{name} (star)"
-        data = _fetch_from_wikipedia_api(star_name)
-        if data and 'thumbnail' in data and 'source' in data['thumbnail']:
-            return data['thumbnail']['source']
-
-    # Fallback to predefined images if API fails
+    # Fallback to predefined images if API fails or has no image
     if name in FALLBACK_IMAGES:
         return FALLBACK_IMAGES[name]
 
-    # If all else fails, return None
-    return None
+    # If Wikipedia fails, construct a targeted search query for a better source
+    try:
+        # A more specific query for astronomical images
+        search_query = name.replace(" ", "+") + "+star"
+        # Using a service that might have better astronomical images.
+        # This is still a demonstration as a dedicated API would be better.
+        return f"https://source.unsplash.com/400x400/?{search_query}"
+    except Exception:
+        # If all else fails, return None so the UI can handle it gracefully
+        return None
 
 
 def get_object_description(name):
@@ -90,3 +90,30 @@ def get_object_description(name):
         return soup.get_text(strip=True)
         
     return "Description not available."
+
+def extract_name_from_description(description: str) -> str | None:
+    """
+    Extract a common name from a description, prioritizing structured patterns.
+
+    Args:
+        description (str): The description text.
+
+    Returns:
+        str or None: The extracted name if found, otherwise None.
+    """
+    if not description:
+        return None
+
+    # Try to find name before " is " or ","
+    match = re.match(r"(.*?)(?: is |,)", description)
+    if match:
+        potential_name = match.group(1).strip()
+        if potential_name and potential_name[0].isupper() and len(potential_name) < 70:
+            return potential_name
+
+    # Fallback to the first capitalized word (if suitable)
+    match = re.match(r"([A-Z][a-zA-Z0-9\\-]{2,})", description)
+    if match:
+        return match.group(1)
+            
+    return None
