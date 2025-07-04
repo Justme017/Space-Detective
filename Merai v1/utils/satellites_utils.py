@@ -12,11 +12,12 @@ import streamlit as st
 
 # --- Constants ---
 _CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-DE421_PATH = os.path.join(_CURRENT_DIR, "de421.bsp")
+_DATA_DIR = os.path.join(os.path.dirname(_CURRENT_DIR), 'data')
+DE421_PATH = os.path.join(_DATA_DIR, "de421.bsp")
 
 # Local TLE files
-STATIONS_FILE = os.path.join(_CURRENT_DIR, "stations.tle")
-BRIGHTEST_FILE = os.path.join(_CURRENT_DIR, "brightest.tle")
+STATIONS_FILE = os.path.join(_DATA_DIR, "stations.tle")
+BRIGHTEST_FILE = os.path.join(_DATA_DIR, "brightest.tle")
 
 # --- Pre-load data to speed up subsequent calls ---
 def _preload_data():
