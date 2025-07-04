@@ -12,7 +12,7 @@ from skyfield.api import utc
 from streamlit_folium import st_folium
 import folium
 from streamlit_javascript import st_javascript
-from wiki_utils import get_object_image_url
+from .wiki_utils import get_object_image_url
 
 # --- Constants ---
 MAX_DESC_LEN = 120

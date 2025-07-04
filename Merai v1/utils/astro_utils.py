@@ -8,7 +8,7 @@ objects, including planets and bright stars, from a given location and time.
 import os
 from skyfield.api import load, Topos, Star
 from skyfield.data import hipparcos
-from wiki_utils import (
+from .wiki_utils import (
     get_object_description, get_object_image_url, extract_name_from_description
 )
 
