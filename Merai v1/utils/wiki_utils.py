@@ -61,17 +61,9 @@ def get_object_image_url(name):
     if name in FALLBACK_IMAGES:
         return FALLBACK_IMAGES[name]
 
-    # If Wikipedia fails, construct a targeted search query for a better source
-    try:
-        # A more specific query for astronomical images
-        search_query = name.replace(" ", "+") + "+star"
-        # Using a service that might have better astronomical images.
-        # This is still a demonstration as a dedicated API would be better.
-        return f"https://source.unsplash.com/400x400/?{search_query}"
-        
-    except Exception:
-        # If all else fails, return None so the UI can handle it gracefully
-        return None
+    # If Wikipedia and predefined fallbacks fail, return a generic high-quality star image.
+    # This is more reliable than a dynamic search that might fail or return irrelevant images.
+    return "https://images.unsplash.com/photo-1534796636912-3b95b3ab5986?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2071&q=80"
 
 
 def get_object_description(name):
