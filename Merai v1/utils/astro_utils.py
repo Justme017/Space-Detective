@@ -160,6 +160,10 @@ def enhance_visible_objects(visible_objects, constellation_map):
             obj['fetched_description'] = description
             obj['image_url'] = image_url
 
+            # If description is still empty, provide a default message
+            if not obj.get('fetched_description'):
+                obj['fetched_description'] = "No description available for this object."
+
             # Add constellation information for stars
             if obj['type'] == 'Star':
                 hip_int = obj.get('hip_int')
