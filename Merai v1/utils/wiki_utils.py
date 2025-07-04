@@ -61,13 +61,10 @@ def get_object_image_url(name):
     if name in FALLBACK_IMAGES:
         return FALLBACK_IMAGES[name]
 
-    # If Wikipedia fails, construct a targeted search query for a better source
+    # If Wikipedia API fails, construct a URL to search for the image on Wikipedia's mobile site
     try:
-        # A more specific query for astronomical images
-        search_query = name.replace(" ", "+") + "+star"
-        # Using a service that might have better astronomical images.
-        # This is still a demonstration as a dedicated API would be better.
-        return f"https://source.unsplash.com/400x400/?{search_query}"
+        search_query = name.replace(" ", "_")
+        return f"https://en.m.wikipedia.org/wiki/{search_query}#/media/File:{search_query}.jpg"
     except Exception:
         # If all else fails, return None so the UI can handle it gracefully
         return None
