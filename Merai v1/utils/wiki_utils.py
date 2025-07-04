@@ -67,8 +67,8 @@ def get_object_image_url(name):
         search_query = name.replace(" ", "+") + "+star"
         # Using a service that might have better astronomical images.
         # This is still a demonstration as a dedicated API would be better.
-       # return f"https://source.unsplash.com/400x400/?{search_query}"
-        return f"https://en.wikipedia.org/wiki/{search_query}#/media/File:{search_query}"
+        return f"https://source.unsplash.com/400x400/?{search_query}"
+        
     except Exception:
         # If all else fails, return None so the UI can handle it gracefully
         return None
