@@ -8,7 +8,7 @@ Wikipedia to enhance the display of astronomical objects.
 import requests
 import html
 import re
-from bs4 import BeautifulSoup, Tag
+from bs4 import BeautifulSoup
 
 # --- Constants ---
 
@@ -53,23 +53,34 @@ def get_object_image_url(name):
     Returns:
         str or None: The image URL if found, otherwise None.
     """
-    # First, try the Wikipedia API for the original name
     data = _fetch_from_wikipedia_api(name)
     if data and 'thumbnail' in data and 'source' in data['thumbnail']:
         return data['thumbnail']['source']
 
-    # If the object is a star, try with a "(star)" suffix
-    if " " in name: # A simple heuristic to guess if it might be a star vs. a planet
-        star_name = f"{name} (star)"
-        data = _fetch_from_wikipedia_api(star_name)
-        if data and 'thumbnail' in data and 'source' in data['thumbnail']:
-            return data['thumbnail']['source']
-
-    # Fallback to predefined images if API fails
+    # Fallback to predefined images if API fails or has no image
     if name in FALLBACK_IMAGES:
         return FALLBACK_IMAGES[name]
 
-    # If all else fails, return None
+    # If Wikipedia fails, fall back to a web search for an image
+    try:
+        # Use a search engine that is likely to have astronomical images
+        search_url = f"https://www.bing.com/images/search?q={name.replace(' ', '+')}+space"
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'}
+        response = requests.get(search_url, headers=headers, timeout=5)
+        response.raise_for_status()
+        
+        soup = BeautifulSoup(response.text, 'html.parser')
+        
+        # Find the first image result
+        img_tag = soup.find("img", class_="mimg")
+        from bs4.element import Tag
+        if isinstance(img_tag, Tag) and img_tag.get('src'):
+            return img_tag.get('src')
+
+    except Exception:
+        # If all else fails, return None
+        return None
+    
     return None
 
 
