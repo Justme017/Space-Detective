@@ -8,7 +8,7 @@ Wikipedia to enhance the display of astronomical objects.
 import requests
 import html
 import re
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
 
 # --- Constants ---
 
@@ -61,21 +61,44 @@ def get_object_image_url(name):
     if name in FALLBACK_IMAGES:
         return FALLBACK_IMAGES[name]
 
-    # If Wikipedia fails, fall back to a web search for an image
+    # If Wikipedia API fails, try to scrape the image from the Wikipedia page
     try:
-        # Use a search engine that is likely to have astronomical images
-        search_url = f"https://www.bing.com/images/search?q={name.replace(' ', '+')}+space"
-        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'}
-        response = requests.get(search_url, headers=headers, timeout=5)
-        response.raise_for_status()
+        # For stars, often adding "_(star)" to the query yields better results
+        search_query = name.replace(" ", "_")
         
-        soup = BeautifulSoup(response.text, 'html.parser')
-        
-        # Find the first image result
-        img_tag = soup.find("img", class_="mimg")
-        from bs4.element import Tag
-        if isinstance(img_tag, Tag) and img_tag.get('src'):
-            return img_tag.get('src')
+        # Try both with and without the "(star)" suffix
+        urls_to_try = [
+            f"https://en.wikipedia.org/wiki/{search_query}",
+            f"https://en.wikipedia.org/wiki/{search_query}_(star)"
+        ]
+
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'}
+
+        for url in urls_to_try:
+            try:
+                response = requests.get(url, headers=headers, timeout=5)
+                response.raise_for_status()
+                
+                soup = BeautifulSoup(response.text, 'html.parser')
+                
+                # Find an image in the infobox, which is most likely the main image
+                infobox = soup.find('table', class_='infobox')
+                if isinstance(infobox, Tag):
+                    img_tag = infobox.find('img')
+                    if isinstance(img_tag, Tag):
+                        src = img_tag.get('src')
+                        if isinstance(src, str):
+                            return f"https:{src}" if src.startswith('//') else src
+
+                # If no infobox image, find the first image on the page
+                img_tag = soup.find('img')
+                if isinstance(img_tag, Tag):
+                    src = img_tag.get('src')
+                    if isinstance(src, str):
+                        return f"https:{src}" if src.startswith('//') else src
+
+            except requests.RequestException:
+                continue # Try the next URL if one fails
 
     except Exception:
         # If all else fails, return None
