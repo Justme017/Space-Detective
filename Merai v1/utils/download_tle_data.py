@@ -3,11 +3,12 @@ import os
 
 # --- Constants ---
 _CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+_DATA_DIR = os.path.join(os.path.dirname(_CURRENT_DIR), 'data')
 STATIONS_URL = "https://celestrak.org/NORAD/elements/gp.php?GROUP=stations&FORMAT=tle"
 BRIGHTEST_URL = "https://celestrak.org/NORAD/elements/gp.php?GROUP=visual&FORMAT=tle"
 
-STATIONS_FILE = os.path.join(_CURRENT_DIR, "stations.tle")
-BRIGHTEST_FILE = os.path.join(_CURRENT_DIR, "brightest.tle")
+STATIONS_FILE = os.path.join(_DATA_DIR, "stations.tle")
+BRIGHTEST_FILE = os.path.join(_DATA_DIR, "brightest.tle")
 
 def download_file(url, filename):
     """Downloads a file from a URL and saves it locally."""

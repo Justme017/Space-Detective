@@ -8,7 +8,7 @@ objects, including planets and bright stars, from a given location and time.
 import os
 from skyfield.api import load, Topos, Star
 from skyfield.data import hipparcos
-from wiki_utils import (
+from .wiki_utils import (
     get_object_description, get_object_image_url, extract_name_from_description
 )
 
@@ -140,6 +140,7 @@ def enhance_visible_objects(visible_objects, constellation_map):
     
     for obj in visible_objects:
         try:
+            image_url = None  # Default image URL
             # For stars, the name might be None initially.
             # We need to fetch the description and potentially extract the name.
             if obj['type'] == 'Star':
@@ -154,10 +155,17 @@ def enhance_visible_objects(visible_objects, constellation_map):
                     name_from_desc = extract_name_from_description(description)
                     if name_from_desc:
                         obj['name'] = name_from_desc
+                
+                # Use the final name (or key) to get the image
+                image_url = get_object_image_url(obj.get('name') or lookup_key)
+
             else:
                 # For non-star objects, the name is always present.
                 description = get_object_description(obj['name'])
                 obj['fetched_description'] = description
+                image_url = get_object_image_url(obj['name'])
+
+            obj['image_url'] = image_url
 
             # Add constellation information for stars
             if obj['type'] == 'Star':
