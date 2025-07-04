@@ -11,7 +11,8 @@ import os
 
 # --- Constants ---
 _CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-CONSTELLATION_FILE_PATH = os.path.join(_CURRENT_DIR, "hygdata_v41.csv")
+_DATA_DIR = os.path.join(os.path.dirname(_CURRENT_DIR), 'data')
+CONSTELLATION_FILE_PATH = os.path.join(_DATA_DIR, "hygdata_v41.csv")
 HIP_COLUMN = 'hip'
 CONSTELLATION_COLUMN = 'con'
 
