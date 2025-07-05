@@ -18,7 +18,7 @@ from wiki_utils import get_object_image_url
 MAX_DESC_LEN = 120
 ZOOM_LEVELS = [0.7, 1.0, 1.3, 1.6, 2.0]
 
-# --- Styling ---
+# --- Styling --- / ---  IF REQUIRED --- REMOVED ---
 
 def apply_custom_styling():
     """Applies custom CSS for a space-themed UI."""
@@ -131,7 +131,7 @@ def _render_gps_section():
         
         st.warning("After granting permission, you must manually enter the coordinates below.")
 
-    # Listen for location data from the iframe
+    # Listen for location data from the iframe FUNCTION, IN ST. JS
     location_data = st_javascript("""
         new Promise(resolve => {
             const handler = event => {

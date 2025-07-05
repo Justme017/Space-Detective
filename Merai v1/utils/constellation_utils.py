@@ -52,7 +52,7 @@ def load_constellation_data(file_path=CONSTELLATION_FILE_PATH):
     """
     constellation_map = {}
     try:
-        with open(file_path, 'r', newline='', encoding='utf-8') as f:
+        with open(file_path, 'r', newline='', encoding='utf-8') as f: # READ HYG DATA.CSV FILE
             reader = csv.DictReader(f)
             for row in reader:
                 try:

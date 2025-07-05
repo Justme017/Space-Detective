@@ -1,6 +1,10 @@
 import requests
 import os
 
+"""MAIN USE TO DOWNLOAD THE TLE DATA FILES FROM CELESTRAK
+BUT ITS HUGE, DYNAMIC AND OFFLINE FILES CANNOT BE USED """
+
+
 # --- Constants ---
 _CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 STATIONS_URL = "https://celestrak.org/NORAD/elements/gp.php?GROUP=stations&FORMAT=tle"

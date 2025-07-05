@@ -10,7 +10,7 @@ from skyfield.api import load, Topos
 import os
 import streamlit as st
 
-# --- Constants ---
+# --- Constants --- / --- PATH DEFINING ---
 _CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 _DATA_DIR = os.path.join(os.path.dirname(_CURRENT_DIR), 'data')
 DE421_PATH = os.path.join(_DATA_DIR, "de421.bsp")

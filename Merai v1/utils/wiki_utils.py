@@ -10,7 +10,7 @@ import html
 import re
 from bs4 import BeautifulSoup
 
-# --- Constants ---
+# --- Constants --- / --- API ---
 
 WIKIPEDIA_API_URL = "https://en.wikipedia.org/api/rest_v1/page/summary/{name}"
 
@@ -74,6 +74,7 @@ def _try_inthesky_image(name, hip_id=None):
     Returns:
         str or None: Image URL if found, None otherwise
     """
+    # FUTURE CASE, PARSING IN-THE-SKY.ORG
     # For now, this is a placeholder. We would need to:
     # 1. Determine if in-the-sky.org has a public API
     # 2. Find the URL pattern for HIP star images
@@ -85,7 +86,7 @@ def _try_inthesky_image(name, hip_id=None):
     
     return None
 
-# --- Public API ---
+# --- Public API --- API REMOVED
 
 def get_object_image_url(name):
     """

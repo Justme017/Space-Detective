@@ -16,7 +16,7 @@ def get_user_location():
     that returns location information based on your IP address.
     
     How it works:
-    1. Makes a request to ipapi.co/json/ (a free IP geolocation service)
+    1. Makes a request to ipapi.co/json/ (a free IP geolocation service) --- EARLIER GEOCODER , WHICH DIDN'T WORK
     2. Parses the JSON response to extract latitude, longitude, and address
     3. Combines city, region, and country into a readable address string
     4. Returns the location data or None if the service is unavailable

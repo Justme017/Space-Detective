@@ -96,7 +96,7 @@ def _configure_layout(fig, lat, lon, dt_utc, zoom):
         margin=dict(l=40, r=40, t=100, b=40)
     )
 
-# --- Public API ---
+# --- Public API --- REMOVED... USING SKYCHART
 
 def create_sky_chart(objects, observer_lat, observer_lon, dt_utc, zoom=1.0):
     """
@@ -125,6 +125,7 @@ def create_sky_chart(objects, observer_lat, observer_lon, dt_utc, zoom=1.0):
         return None
 
 # --- Test Block ---
+"""
 
 if __name__ == '__main__':
     from datetime import datetime, timezone
@@ -153,3 +154,5 @@ if __name__ == '__main__':
         print("Test Plotly sky chart saved to test_plotly_skychart.html")
     else:
         print("Failed to generate test Plotly sky chart.")
+        
+"""
