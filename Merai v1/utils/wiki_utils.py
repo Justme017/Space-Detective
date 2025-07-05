@@ -97,12 +97,16 @@ def get_object_image_url(name):
     Returns:
         str or None: The image URL if found, otherwise None.
     """
+    # Special case: Always use hardcoded image for Mimosa
+    if name == 'Mimosa':
+        return FALLBACK_IMAGES['Mimosa']
+    
     # First try Wikipedia
     data = _fetch_from_wikipedia_api(name)
     if data and 'thumbnail' in data and 'source' in data['thumbnail']:
         return data['thumbnail']['source']
 
-    # Then check our curated fallback images (including in-the-sky.org images)
+    # Then check our curated fallback images
     if name in FALLBACK_IMAGES:
         return FALLBACK_IMAGES[name]
     
