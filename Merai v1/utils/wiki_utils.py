@@ -29,7 +29,7 @@ FALLBACK_IMAGES = {
     'Pluto': 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ef/Pluto_in_True_Color_-_High-Res.jpg/256px-Pluto_in_True_Color_-_High-Res.jpg',
     
     # Bright stars with reliable astronomical images
-    'Mimosa': 'https://in-the-sky.org/image.php?style=medium&userimg=19910715_115946_4ca957e54542.png',
+    'Mimosa': 'https://nineplanets.org/wp-content/uploads/2020/01/optical-image-of-the-star-mimosa-or-beta-crucis-celestial-image-co.jpg',
     'Sirius': 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=center',
     'Canopus': 'https://freestarcharts.com/images/Articles/Stars/Canopus/Canopus_Espenak.jpg',
     'Arcturus': 'https://en.wikipedia.org/wiki/Arcturus#/media/File:Arcturus_(optical).png',
