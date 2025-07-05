@@ -38,7 +38,7 @@ CONSTELLATION_NAMES = {
     "UMI": "Ursa Minor", "VEL": "Vela", "VIR": "Virgo", "VOL": "Volans", "VUL": "Vulpecula"
 }
 
-# --- Public API ---
+# --- Public API/HYG data ---
 
 def load_constellation_data(file_path=CONSTELLATION_FILE_PATH):
     """
