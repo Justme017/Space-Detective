@@ -242,6 +242,12 @@ def create_object_tiles(objects):
         st.info("No astronomical objects are currently visible. Try changing the time or location.")
         return
 
+    # DEBUG: Check what objects we're receiving
+    st.write(f"DEBUG: Received {len(objects)} objects")
+    for i, obj in enumerate(objects[:3]):  # Show first 3 objects
+        desc = obj.get('fetched_description', '')
+        st.write(f"DEBUG Object {i+1}: {obj.get('name', 'No name')} - Has description: {bool(desc)} - Length: {len(desc) if desc else 0}")
+
     st.metric("Visible Objects", len(objects))
     sorted_objects = sorted(objects, key=lambda x: (-x['altitude']))
     
