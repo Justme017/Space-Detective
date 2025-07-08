@@ -227,10 +227,13 @@ def create_object_tile(obj, container):
         desc = obj.get('fetched_description', '')
         if desc and desc != "Description not available.":
             if len(desc) > MAX_DESC_LEN:
-                with st.expander("Read Description"):
+                with st.expander("⭐ Read Description"):
                     st.write(desc)
             else:
-                st.write(f"**Desc:** {desc}")
+                st.write(f"**Description:** {desc}")
+        else:
+            # Show placeholder if no description is available
+            st.write("**Description:** Not available")
         st.markdown("</div>", unsafe_allow_html=True)
 
 def create_object_tiles(objects):

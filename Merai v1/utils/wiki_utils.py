@@ -14,6 +14,64 @@ from bs4 import BeautifulSoup
 
 WIKIPEDIA_API_URL = "https://en.wikipedia.org/api/rest_v1/page/summary/{name}"
 
+# Star name mappings for Wikipedia lookup
+# Some star names in astronomical catalogs don't match Wikipedia page names
+STAR_NAME_MAPPINGS = {
+    'Mimosa': 'Beta Crucis',
+    'Hadar': 'Beta Centauri',
+    'Acrux': 'Alpha Crucis',
+    'Gacrux': 'Gamma Crucis',
+    'Bellatrix': 'Bellatrix (star)',
+    'Shaula': 'Lambda Scorpii',
+    'Castor': 'Castor (star)',
+    'Alnilam': 'Alnilam',
+    'Alnitak': 'Alnitak',
+    'Mintaka': 'Mintaka',
+    'Polaris': 'Polaris',
+    'Dubhe': 'Dubhe',
+    'Merak': 'Merak',
+    'Phecda': 'Phecda',
+    'Megrez': 'Megrez',
+    'Alioth': 'Alioth',
+    'Mizar': 'Mizar (star)',
+    'Alkaid': 'Alkaid',
+    'Atria': 'Alpha Trianguli Australis',
+    'Peacock': 'Alpha Pavonis',
+    'Alnair': 'Alpha Gruis',
+    'Elnath': 'Beta Tauri',
+    'Adhara': 'Epsilon Canis Majoris',
+    'Wezen': 'Delta Canis Majoris',
+    'Sargas': 'Theta Scorpii',
+    'Kaus Australis': 'Epsilon Sagittarii',
+    'Avior': 'Epsilon Carinae',
+    'Miaplacidus': 'Beta Carinae',
+    'Alsephina': 'Delta Velorum',
+    'Aspidiske': 'Iota Carinae',
+    'Suhail': 'Lambda Velorum',
+    'Alphecca': 'Alpha Coronae Borealis',
+    'Unukalhai': 'Alpha Serpentis',
+    'Eltanin': 'Gamma Draconis',
+    'Rasalhague': 'Alpha Ophiuchi',
+    'Kochab': 'Beta Ursae Minoris',
+    'Nunki': 'Sigma Sagittarii',
+    'Sabik': 'Eta Ophiuchi',
+    'Schedar': 'Alpha Cassiopeiae',
+    'Ankaa': 'Alpha Phoenicis',
+    'Diphda': 'Beta Ceti',
+    'Achernar': 'Alpha Eridani',
+    'Menkar': 'Alpha Ceti',
+    'Mirfak': 'Alpha Persei',
+    'Algol': 'Beta Persei',
+    'Electra': 'Electra (star)',
+    'Taygeta': 'Taygeta (star)',
+    'Maia': 'Maia (star)',
+    'Celaeno': 'Celaeno (star)',
+    'Atlas': 'Atlas (star)',
+    'Merope': 'Merope (star)',
+    'Alcyone': 'Alcyone (star)',
+    'Pleione': 'Pleione (star)',
+}
+
 # Fallback images for common celestial objects and bright stars
 FALLBACK_IMAGES = {
     # Planets and celestial bodies
@@ -56,8 +114,11 @@ def _fetch_from_wikipedia_api(name):
     """
     Fetches data from the Wikipedia summary API.
     """
+    # Map star names to their Wikipedia page names
+    lookup_name = STAR_NAME_MAPPINGS.get(name, name)
+    
     try:
-        resp = requests.get(WIKIPEDIA_API_URL.format(name=name), timeout=5)
+        resp = requests.get(WIKIPEDIA_API_URL.format(name=lookup_name), timeout=5)
         resp.raise_for_status()  # Raise an exception for bad status codes
         return resp.json()
     except requests.RequestException:
